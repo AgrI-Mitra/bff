@@ -85,11 +85,19 @@ export class AppController {
     let startTime = Date.now()
     //get userId from headers
     const userId = headers["user-id"]
+    const sessionId = headers["session-id"]
     console.log("userId =",userId)
+    console.log("sessionId =", sessionId)
     if(!userId){
       return {
         "text":"",
         "error": "'user-id' should not be empty"
+      }
+    }
+    if(!sessionId) {
+      return {
+        "text": "",
+        "error": "'session-id' should not be empty"
       }
     }
     let messageType = 'intermediate_response'
@@ -152,16 +160,40 @@ export class AppController {
         }
       })
     }
-    let conversation = await this.conversationService.getConversationState(
-      userId,
-      configid
-    )
+
     //input setup
     let prompt: Prompt = {
       input: promptDto
     }
     let userInput = promptDto.text;
     let type = "text"
+
+    let defaultContext = {
+      sessionId,
+      userId,
+      userQuestion:'',
+      query: '',
+      queryType: '',
+      response: '',
+      userAadhaarNumber: user.identifier && configid=='3' ? user.identifier : '',
+      otp: '',
+      error: '',
+      currentState: "getUserQuestion",
+      type: '',
+      inputType: type,
+      inputLanguage: prompt.inputLanguage,
+      lastAadhaarDigits:'',
+      state:'onGoing',
+      isOTPVerified: false
+    }
+
+    let conversation = await this.conversationService.getConversationState(
+      sessionId,
+      userId,
+      defaultContext,
+      configid
+    )
+    
     //handle text and audio
     if(promptDto.text){
       type = "Text"
@@ -342,6 +374,8 @@ export class AppController {
       }
     }
 
+    conversation.inputType = type;
+
     //get flow
     let botFlowMachine;
     switch(configid){
@@ -358,23 +392,7 @@ export class AppController {
         botFlowMachine = this.promptService.getXstateMachine("botFlowMachine3")
     }
 
-    let defaultContext = {
-      userId,
-      userQuestion:'',
-      query: '',
-      queryType: '',
-      response: '',
-      userAadhaarNumber: user.identifier && configid=='3' ? user.identifier : '',
-      otp: '',
-      error: '',
-      currentState: "getUserQuestion",
-      type: '',
-      inputType: type,
-      inputLanguage: prompt.inputLanguage,
-      lastAadhaarDigits:'',
-      state:'onGoing',
-      isOTPVerified: false
-    }
+    
 
     let botFlowService = interpret(botFlowMachine.withContext(conversation || defaultContext)).start();
     // verboseLogger("current state when API hit =", botFlowService.state.context.currentState)
@@ -1085,6 +1103,7 @@ export class AppController {
     }
 
     conversation = await this.conversationService.saveConversation(
+      sessionId,
       userId,
       botFlowService.getSnapshot().context,
       botFlowService.state.context.state,

@@ -20,8 +20,8 @@ export const promptGuards = {
 
     ifOTPHasBeenVerified: (context,_) => context.isOTPVerified,
 
-    ifInvalidClassifier: (_,event) => event.data == "invalid",
+    ifInvalidClassifier: (_,event) => event.data.class == "invalid",
 
-    ifConvoStarterOrEnder: (_,event) => event.data == "convo"
+    ifConvoStarterOrEnder: (_,event) => event.data.class == "convo"
 
 }

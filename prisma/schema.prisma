@@ -13,7 +13,7 @@ datasource db {
 }
 
 model conversation {
-  id                    String    @default(uuid()) @db.Uuid
+  id                    String    @db.Uuid
   createdAt             DateTime  @default(now()) @db.Timestamptz(3)
   updatedAt             DateTime  @updatedAt
   userId                String    @db.Uuid
@@ -22,7 +22,6 @@ model conversation {
   flowId                String
   feedback              feedback?
   @@unique([id])
-  @@unique([userId,flowId])
 }
 
 model User {

@@ -878,19 +878,21 @@ export const botFlowMachine3:any =
           onDone: [
             {
               cond: "ifConvoStarterOrEnder",
-              target: "wadhwaniClassifier",
+              target: "endFlow",
               actions: [
                 assign({
                   queryType: (_,event) => event.data,
+                  response: (_,event) => event.data.response,
                   isWadhwaniResponse: "true"
                 })
               ]
             },
             {
               cond: "ifInvalidClassifier",
-              target: "wadhwaniClassifier",
+              target: "endFlow",
               actions: [
                 assign({
+                  response: (_,event) => event.data.response,
                   isWadhwaniResponse: "true"
                 })
               ]

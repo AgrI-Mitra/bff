@@ -34,14 +34,18 @@ export class PromptServices {
 
     async questionClassifier (context) {
         try{
-            let response: any = await this.aiToolsService.textClassification(context.query)
+            let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId, context.query)
             if (response.error) throw new Error(`${response.error}, please try again.`)
             if (response == `"Invalid"`) return "convo"
             if (response == `"convo_starter"`) return "convo"
             if (response == `"convo_ender"`) return "convo"
             if (response == `"Installment Not Received"`) return "payment"
             else {
-                return "invalid"
+                intent = "invalid"
+            }
+            return {
+                class: intent,
+                response: response.response
             }
         } catch (error){
             return Promise.reject(error)
@@ -198,7 +202,7 @@ export class PromptServices {
 
     async wadhwaniClassifier (context) {
         try{
-            let response: any = await this.aiToolsService.getResponseViaWadhwani(context.query)
+            let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId,context.query)
             if (response.error) throw new Error(`${response.error}, please try again.`)
             return response;
         } catch (error){

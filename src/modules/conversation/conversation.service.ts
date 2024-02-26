@@ -16,14 +16,16 @@ export class ConversationService {
   }
 
   async saveConversation(
+    sessionId: string,
     userId: string,
     context: any,
     state: string,
     flowId: string
   ): Promise<any> {
      return await this.prisma.conversation.upsert({
-        where: { userId_flowId: {userId, flowId} },
+        where: { id: sessionId },
         create: { 
+            id: sessionId,
             userId,
             context,
             state,
@@ -34,18 +36,39 @@ export class ConversationService {
   }
 
   async getConversationState(
+    sessionId: string,
     userId: string,
-    flowId: string
+    defaultContext: any,
+    flowId: string,
   ): Promise<any | null> {
-    const conversation: any = await this.prisma.conversation.findFirst({
+    let conversation: any = await this.prisma.conversation.findFirst({
         where: { 
-            userId,
-            flowId,
-            state: 'onGoing'
+            id: sessionId
         },
     });
+
+    if(!conversation) {
+      conversation = await this.prisma.conversation.create({
+        data: {
+          id: sessionId,
+          userId,
+          context: defaultContext,
+          flowId,
+          state: 'onGoing'
+        } 
+      })
+    }
     
     return conversation?.context ? {...conversation.context, id:conversation.id} : null;
+  }
+
+  async getConversationById(sessionId: string): Promise<any | null> {
+    const conversation: any = await this.prisma.conversation.findFirst({
+      where: {
+        id: sessionId
+      }
+    });
+    return conversation?.id ? conversation : null;
   }
 
   async createOrUpdateFeedback(
