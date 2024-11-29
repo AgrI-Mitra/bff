@@ -1,5 +1,14 @@
-const fetch = require("node-fetch");
+const fetch = require("./fetch");
 const { Headers } = fetch;
+const { LokiLogger } = require('../modules/loki-logger/loki-logger.service');
+const { HttpService } = require('@nestjs/axios');
+const { ConfigService } = require('@nestjs/config');
+
+const logger = new LokiLogger(
+  'utils',
+  new HttpService(),
+  new ConfigService()
+);
 
 export function isMostlyEnglish(text: string): boolean {
   const englishCharacterCount = (
@@ -148,7 +157,7 @@ export const encryptRequest = async (text: string) => {
   try {
     var myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
-    console.log("text: ", text);
+    logger.log("text: ", text);
     var raw = JSON.stringify({
       EncryptedRequest: text,
     });

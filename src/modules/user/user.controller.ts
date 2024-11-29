@@ -1,132 +1,57 @@
 import { Body, Controller, Get, Param, Post, Headers } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CustomLogger } from 'src/common/logger';
 import { PrismaService } from 'src/global-services/prisma.service';
 import { Message } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { LokiLogger } from '../loki-logger/loki-logger.service';
+import { HttpService } from '@nestjs/axios';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
 const { v5: uuidv5 } = require('uuid');
 
+@ApiTags('User')
 @Controller('user')
 export class UserController {
-  private logger: CustomLogger;
+  private logger: LokiLogger;
   constructor(
     private readonly userService: UserService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    private readonly configService: ConfigService
   ) {
-    this.logger = new CustomLogger("UserService");
-    this.prismaService = new PrismaService();
+    this.logger = new LokiLogger(
+      'main',
+      new HttpService(),
+      this.configService,
+    );
   }
 
-  @Get("/sendotp/:identifier")
-  async getOtp(@Param("identifier") identifier: string) {
-    if(/^[6-9]\d{9}$/.test(identifier)) {
-      return this.userService.sendOTP(identifier,"Mobile")
-    } else if(identifier.length==14 && /^[6-9]\d{9}$/.test(identifier.substring(0,10))){
-      return this.userService.sendOTP(identifier,"MobileAadhar")
-    } else if(identifier.length==12 && /^\d+$/.test(identifier)){
-      return this.userService.sendOTP(identifier,"Aadhar")
-    } else if(identifier.length == 11) { 
-      return this.userService.sendOTP(identifier,"Ben_id")
-    } else {
-      return {
-        "status": "NOT_OK",
-        "error": "Please enter a valid Beneficiary ID/Aadhaar Number/Phone number"
-      }
-    }
-  }
-
-  @Post("/verifyotp")
-  async verifyOtp(@Body() body: any ) {
-    if(/^[6-9]\d{9}$/.test(body.identifier)) {
-      return this.userService.verifyOTP(body.identifier,body.otp,"Mobile")
-    } else if(body.identifier.length==14 && /^[6-9]\d{9}$/.test(body.identifier.substring(0,10))){
-      return this.userService.verifyOTP(body.identifier,body.otp,"MobileAadhar")
-    } else if(body.identifier.length==12 && /^\d+$/.test(body.identifier)){
-      return this.userService.verifyOTP(body.identifier,body.otp,"Aadhar")
-    } else if(body.identifier.length == 11) { 
-      return this.userService.verifyOTP(body.identifier,body.otp,"Ben_id")
-    }else {
-      return {
-        "status": "NOT_OK",
-        "error": "Please enter a valid Beneficiary ID/Aadhaar Number/Phone number"
-      }
-    }
-  }
-
-  @Get("/getUserData/:identifier")
-  async getUserData(@Param("identifier") identifier: string) {
-    if(/^[6-9]\d{9}$/.test(identifier)) {
-      return this.userService.getUserData(identifier,"Mobile")
-    } else if(identifier.length==14 && /^[6-9]\d{9}$/.test(identifier.substring(0,10))){
-      return this.userService.getUserData(identifier,"MobileAadhar")
-    } else if(identifier.length==12 && /^\d+$/.test(identifier)){
-      return this.userService.getUserData(identifier,"Aadhar")
-    } else if(identifier.length == 11) { 
-      return this.userService.getUserData(identifier,"Ben_id")
-    }else {
-      return {
-        "status": "NOT_OK",
-        "error": "Please enter a valid Beneficiary ID/Aadhaar Number/Phone number"
-      }
-    }
-  }
-
+  @ApiOperation({ summary: 'Generate user ID' })
+  @ApiParam({ name: 'identifier', description: 'Unique identifier to generate UUID' })
+  @ApiResponse({ status: 200, description: 'User ID generated successfully' })
   @Post('/generateUserId/:identifier')
   async generateUserId(@Param("identifier") identifier: string) {
     const uuid = uuidv5(identifier, uuidv5.DNS);
     return uuid
   }
 
-  @Get("/history/:flowId")
-  async prompt(@Headers() headers,@Param("flowId") flowId: string): Promise<any> {
-    const userId = headers["user-id"]
-    if(!userId){
-      return {
-        "status": "NOT_OK",
-        "error": "Invalid userId."
-      }
-    }
-    let user;
-    try{
-      user = await this.prismaService.user.findUnique({
-        where:{
-          id: userId
-        },
-        select: {
-          messages: {
-            where: {
-              flowId: flowId || '3'
-            }
-          }
-        }
-      })
-    }catch{
-      return {
-        "status": "NOT_OK",
-        "error": "Invalid userId."
-      }
-    }
-    if(!user) {
-      return {
-        "status": "NOT_OK",
-        "error": "Invalid userId."
-      }
-    }
-    return {
-      "status": "OK",
-      "data": user.messages
-    }
-  }
-
+  @ApiOperation({ summary: 'Like a message' })
+  @ApiParam({ name: 'id', description: 'Message ID to like' })
+  @ApiResponse({ status: 200, description: 'Message liked successfully' })
   @Get("message/like/:id")
   async likeQuery(@Param('id') id: string): Promise<Message> {
     return this.userService.likeQuery(id);
   }
 
+  @ApiOperation({ summary: 'Dislike a message' })
+  @ApiParam({ name: 'id', description: 'Message ID to dislike' })
+  @ApiResponse({ status: 200, description: 'Message disliked successfully' })
   @Get("message/dislike/:id")
   async dislikeQuery(@Param('id') id: string): Promise<Message> {
     return this.userService.dislikeQuery(id);
   }
 
+  @ApiOperation({ summary: 'Remove reaction from message' })
+  @ApiParam({ name: 'id', description: 'Message ID to remove reaction from' })
+  @ApiResponse({ status: 200, description: 'Reaction removed successfully' })
   @Get("message/removelike/:id")
   async removeLike(@Param('id') id: string): Promise<Message> {
     return this.userService.removeReactionOnQuery(id);

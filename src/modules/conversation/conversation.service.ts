@@ -1,18 +1,22 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../global-services/prisma.service";
 import { ConfigService } from "@nestjs/config";
-import { CustomLogger } from "../../common/logger";
 import { feedback } from "@prisma/client";
-
+import { LokiLogger } from "../loki-logger/loki-logger.service";
+import { HttpService } from "@nestjs/axios";
 
 @Injectable()
 export class ConversationService {
-  private logger: CustomLogger;
+  private logger: LokiLogger;
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService
   ) {
-    this.logger = new CustomLogger("ConversationService");
+    this.logger = new LokiLogger(
+      'main',
+      new HttpService(),
+      this.configService,
+    );
   }
 
   async saveConversation(

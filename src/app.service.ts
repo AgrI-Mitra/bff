@@ -2,6 +2,9 @@ import { Injectable } from "@nestjs/common";
 import { PromptDto } from "./app.controller";
 import { Language } from "./language";
 import { PrismaService } from "./global-services/prisma.service";
+import { LokiLogger } from "./modules/loki-logger/loki-logger.service";
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 // Overlap between LangchainAI and Prompt-Engine
 const cron = require('node-cron');
 export interface Prompt {
@@ -20,16 +23,26 @@ export interface Prompt {
 }
 @Injectable()
 export class AppService {
+  private logger: LokiLogger;
+
   constructor(
-    private prismaService: PrismaService
-  ){}
+    private prismaService: PrismaService,
+    private httpService: HttpService,
+    private configService: ConfigService
+  ){
+    this.logger = new LokiLogger(
+      AppService.name,
+      httpService,
+      configService,
+    );
+  }
   getHello(): string {
     return "Hello World!";
   }
 
   onApplicationBootstrap() {
     // Schedule the task to run every hour (adjust as needed)
-    console.log("scheduling cron for every 30min")
+    this.logger.log("scheduling cron for every 30min");
     cron.schedule('*/30 * * * *', () => {
       this.clearAadhaarNumbers();
     });
@@ -71,9 +84,9 @@ export class AppService {
         });
       }
   
-      console.log('Cleared userAadhaarNumber in conversations older than 30 minutes.');
+      this.logger.log('Cleared userAadhaarNumber in conversations older than 30 minutes.');
     } catch (error) {
-      console.error('Error clearing Aadhaar numbers:', error);
+      this.logger.error('Error clearing Aadhaar numbers:', error);
     }
   }
 }

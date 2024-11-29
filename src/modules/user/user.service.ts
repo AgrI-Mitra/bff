@@ -1,21 +1,26 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../global-services/prisma.service";
 import { ConfigService } from "@nestjs/config";
-import { CustomLogger } from "../../common/logger";
+import { LokiLogger } from '../loki-logger/loki-logger.service';
 import axios from "axios";
 import { decryptRequest, encryptRequest } from "../../common/utils";
 import { Message } from "@prisma/client";
 import { MonitoringService } from "../monitoring/monitoring.service";
+import { HttpService } from "@nestjs/axios";
 
 @Injectable()
 export class UserService {
-  private logger: CustomLogger;
+  private logger: LokiLogger;
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
     private monitoringService: MonitoringService
   ) {
-    this.logger = new CustomLogger("UserService");
+    this.logger = new LokiLogger(
+      'main',
+      new HttpService(),
+      this.configService,
+    );
   }
 
   async sendOTP(mobileNumber: string, type: string = "Mobile"): Promise<any> {
@@ -25,7 +30,7 @@ export class UserService {
           "PM_KISSAN_TOKEN"
         )}\"}`
       );
-      console.log("encrypted data: ", encryptedData);
+      this.logger.log("encrypted data: ", encryptedData);
       let data = JSON.stringify({
         EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
       });
@@ -41,7 +46,7 @@ export class UserService {
       };
 
       let response: any = await axios.request(config);
-      console.log("sendOTP", response.status);
+      this.logger.log("sendOTP", response.status);
       if (response.status >= 200 && response.status < 300) {
         response = await response.data;
         let decryptedData: any = await decryptRequest(
@@ -63,7 +68,7 @@ export class UserService {
         };
       }
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return {
         d: {
           output: {
@@ -103,14 +108,14 @@ export class UserService {
       };
 
       let response: any = await axios.request(config);
-      console.log("verifyOTP", response.status);
+      this.logger.log("verifyOTP", response.status);
       if (response.status >= 200 && response.status < 300) {
         response = await response.data;
         let decryptedData: any = await decryptRequest(
           response.d.output,
           encryptedData.d.token
         );
-        console.log(decryptedData);
+        this.logger.log(decryptedData);
         response.d.output = JSON.parse(decryptedData.d.decryptedvalue);
         response["status"] =
           response.d.output.Rsponce != "False" ? "OK" : "NOT_OK";
@@ -126,7 +131,7 @@ export class UserService {
         };
       }
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return {
         d: {
           output: {
@@ -165,7 +170,7 @@ export class UserService {
         data: data,
       };
       res = await axios.request(config);
-      console.log("getUserData", res.status);
+      this.logger.log("getUserData", res.status);
       if (res.status >= 200 && res.status < 300) {
         res = await res.data;
         let decryptedData: any = await decryptRequest(

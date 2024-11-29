@@ -21,11 +21,12 @@ import {
 } from "./common/utils";
 import { ConversationService } from "./modules/conversation/conversation.service";
 import { PrismaService } from "./global-services/prisma.service";
-import { CustomLogger } from "./common/logger";
 import { MonitoringService } from "./modules/monitoring/monitoring.service";
 import { PromptServices } from "./xstate/prompt/prompt.service";
-import { TelemetryService } from "./modules/telemetry/telemetry.service";
 import { Cache } from "cache-manager";
+import { LokiLogger } from "./modules/loki-logger/loki-logger.service";
+import { HttpService } from '@nestjs/axios';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
 const uuid = require("uuid");
 const path = require("path");
 const filePath = path.resolve(__dirname, "./common/en.json");
@@ -65,6 +66,7 @@ export class PromptDto {
   identifier?: string;
 }
 
+@ApiTags('App')
 @Controller()
 export class AppController {
   private configService: ConfigService;
@@ -72,12 +74,12 @@ export class AppController {
   private conversationService: ConversationService;
   private prismaService: PrismaService;
   private promptService: PromptServices;
-  private logger: CustomLogger;
+  private logger: LokiLogger
 
   constructor(
     private readonly appService: AppService,
     private readonly monitoringService: MonitoringService,
-    private readonly telemetryService: TelemetryService,
+    private readonly httpService: HttpService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
   ) {
     this.prismaService = new PrismaService();
@@ -85,6 +87,7 @@ export class AppController {
     this.aiToolsService = new AiToolsService(
       this.configService,
       this.monitoringService,
+      this.httpService,
       this.cacheManager
     );
     this.conversationService = new ConversationService(
@@ -95,16 +98,30 @@ export class AppController {
       this.prismaService,
       this.configService,
       this.aiToolsService,
-      this.monitoringService
+      this.monitoringService,
+      this.httpService
     );
-    this.logger = new CustomLogger("AppController");
+    this.logger = new LokiLogger(
+      AppController.name,
+      httpService,
+      this.configService,
+    );
   }
 
+  @ApiOperation({ summary: 'Get hello message' })
+  @ApiResponse({ status: 200, description: 'Returns hello message' })
   @Get("/")
   getHello(): string {
     return this.appService.getHello();
   }
 
+  @ApiOperation({ summary: 'Process user prompt' })
+  @ApiParam({ name: 'configid', description: 'Configuration ID' })
+  @ApiBody({ type: PromptDto })
+  @ApiHeader({ name: 'user-id', description: 'User ID' })
+  @ApiHeader({ name: 'session-id', description: 'Session ID' })
+  @ApiResponse({ status: 200, description: 'Returns processed prompt response' })
+  @ApiResponse({ status: 400, description: 'Missing required headers' })
   @Post("/prompt/:configid")
   async prompt(
     @Body() promptDto: any,
@@ -115,8 +132,8 @@ export class AppController {
     //get userId from headers
     const userId = headers["user-id"];
     const sessionId = headers["session-id"];
-    console.log("userId =", userId);
-    console.log("sessionId =", sessionId);
+    this.logger.log("userId =", userId);
+    this.logger.log("sessionId =", sessionId);
     if (!userId) {
       return {
         text: "",
@@ -156,37 +173,6 @@ export class AppController {
       });
     } catch {
       this.monitoringService.incrementTotalSessionsCount();
-      // verboseLogger("creating new user with id =",userId)
-      await this.telemetryService.capture({
-        eventName: "Conversation start",
-        eventType: "START_CONVERSATION",
-        producer: {
-          channel: "Bot",
-          deviceID: null,
-          producerID: userId,
-          platform: "nodejs",
-        },
-        platform: "nodejs",
-        sessionId: userId,
-        context: {
-          userID: userId,
-          conversationID: userId,
-          pageID: null,
-          rollup: undefined,
-        },
-        eventData: {
-          duration: `${Date.now() - startTime}`,
-          audioURL: null,
-          questionGenerated: null,
-          questionSubmitted: promptDto.text,
-          comparisonScore: 0,
-          answer: null,
-          logData: undefined,
-          errorData: undefined,
-        },
-        errorType: null,
-        tags: ["bot", "conversation_start"],
-      });
     }
     if (!user) {
       user = await this.prismaService.user.create({
@@ -234,7 +220,7 @@ export class AppController {
       configid
     )
     
-    // console.log("fetched conversation: ", conversation)
+    // this.logger.log("fetched conversation: ", conversation)
     //handle text and audio
     if (promptDto.text) {
       type = "Text";
@@ -242,83 +228,19 @@ export class AppController {
       if (/^\d+$/.test(userInput)) {
         prompt.inputLanguage = Language.en;
       } else {
-        // console.log("IN ELSE....")
+        // this.logger.log("IN ELSE....")
         try {
           let response = await this.aiToolsService.detectLanguage(userInput, userId, sessionId)
           prompt.inputLanguage = response["language"] as Language 
         } catch (error) {
-          await this.telemetryService.capture({
-            eventName: "Detect language error",
-            eventType: "DETECT_LANGUAGE",
-            producer: {
-              channel: "Bot",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - detectLanguageStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: promptDto.text,
-              comparisonScore: 0,
-              answer: prompt.inputLanguage,
-              logData: undefined,
-              errorData: {
-                input: userInput,
-                error: error,
-              },
-            },
-            errorType: "DETECT_LANGUAGE",
-            tags: ["bot", "detect_language", "error"],
-          });
         }
-        // console.log("LANGUAGE DETECTED...")
+        // this.logger.log("LANGUAGE DETECTED...")
         //@ts-ignore
         if (prompt.inputLanguage == "unk") {
           prompt.inputLanguage = prompt.input.inputLanguage as Language;
         }
         // verboseLogger("Detected Language =", prompt.inputLanguage)
       }
-      // console.log("TELEMETRYYYYY")
-      await this.telemetryService.capture({
-        eventName: "Detect language",
-        eventType: "DETECT_LANGUAGE",
-        producer: {
-          channel: "Bot",
-          deviceID: null,
-          producerID: userId,
-          platform: "nodejs",
-        },
-        platform: "nodejs",
-        sessionId: userId,
-        context: {
-          userID: userId,
-          conversationID: userId,
-          pageID: null,
-          rollup: undefined,
-        },
-        eventData: {
-          duration: `${Date.now() - detectLanguageStartTime}`,
-          audioURL: null,
-          questionGenerated: null,
-          questionSubmitted: promptDto.text,
-          comparisonScore: 0,
-          answer: prompt.inputLanguage,
-          logData: undefined,
-          errorData: undefined,
-        },
-        errorType: null,
-        tags: ["bot", "detect_language"],
-      });
     } else if (promptDto.media) {
       let audioStartTime = Date.now();
       if (promptDto.media.category == "base64audio" && promptDto.media.text) {
@@ -331,39 +253,6 @@ export class AppController {
           response = await this.aiToolsService.speechToText(promptDto.media.text,prompt.inputLanguage,userId,sessionId)
 
         if (response.error) {
-          await this.telemetryService.capture({
-            eventName: "Speech to text error",
-            eventType: "SPEECH_TO_TEXT_ERROR",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - audioStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: promptDto.text,
-              comparisonScore: 0,
-              answer: null,
-              logData: undefined,
-              errorData: {
-                language: prompt.inputLanguage,
-                error: response.error,
-              },
-            },
-            errorType: "SPEECH_TO_TEXT",
-            tags: ["bot", "speech_to_text", "error"],
-          });
           errorLogger(response.error);
           this.monitoringService.incrementTotalFailureSessionsCount();
           this.monitoringService.incrementSomethingWentWrongTryAgainCount();
@@ -374,37 +263,6 @@ export class AppController {
           };
         }
         userInput = response["text"];
-        // verboseLogger("speech to text =",userInput)
-        await this.telemetryService.capture({
-          eventName: "Speech to text",
-          eventType: "SPEECH_TO_TEXT",
-          producer: {
-            channel: "Bhashini",
-            deviceID: null,
-            producerID: userId,
-            platform: "nodejs",
-          },
-          platform: "nodejs",
-          sessionId: userId,
-          context: {
-            userID: userId,
-            conversationID: userId,
-            pageID: null,
-            rollup: undefined,
-          },
-          eventData: {
-            duration: `${Date.now() - audioStartTime}`,
-            audioURL: null,
-            questionGenerated: userInput,
-            questionSubmitted: userInput,
-            comparisonScore: 0,
-            answer: null,
-            logData: undefined,
-            errorData: null,
-          },
-          errorType: "SPEECH_TO_TEXT",
-          tags: ["bot", "speech_to_text"],
-        });
       } else {
         this.monitoringService.incrementUnsupportedMediaCount();
         errorLogger("Unsupported media");
@@ -419,7 +277,7 @@ export class AppController {
     }
 
     conversation.inputType = type;
-    // console.log("CP 1...")
+    // this.logger.log("CP 1...")
     //get flow
     let botFlowMachine;
     switch (configid) {
@@ -446,7 +304,7 @@ export class AppController {
       type == "Text"
     ) {
       let hashedAadhaar = await argon2.hash(promptDto.text);
-      console.log("you have entered aadhaar", hashedAadhaar);
+      this.logger.log("you have entered aadhaar", hashedAadhaar);
       await this.prismaService.message.create({
         data: {
           text: hashedAadhaar,
@@ -459,7 +317,7 @@ export class AppController {
         }
       })
     }else {
-      // console.log("creating a new message in Message table...")
+      // this.logger.log("creating a new message in Message table...")
       await this.prismaService.message.create({
         data: {
           text: type == "Text" ? promptDto.text : null,
@@ -487,78 +345,13 @@ export class AppController {
       }
       res['audio'] = await this.aiToolsService.textToSpeech(res.text,prompt.inputLanguage,promptDto.audioGender,userId,sessionId)
       if(res['audio']['error']){
-        await this.telemetryService.capture({
-          eventName: "Text to speech error",
-          eventType: "TEXT_TO_SPEECH_ERROR",
-          producer: {
-            channel: "Bhashini",
-            deviceID: null,
-            producerID: userId,
-            platform: "nodejs",
-          },
-          platform: "nodejs",
-          sessionId: userId,
-          context: {
-            userID: userId,
-            conversationID: userId,
-            pageID: null,
-            rollup: undefined,
-          },
-          eventData: {
-            duration: `${Date.now() - audioStartTime}`,
-            audioURL: null,
-            questionGenerated: null,
-            questionSubmitted: res.text,
-            comparisonScore: 0,
-            answer: prompt.inputLanguage,
-            logData: undefined,
-            errorData: {
-              input: res.text,
-              language: prompt.inputLanguage,
-              error: res["audio"]["error"],
-            },
-          },
-          errorType: "TEXT_TO_SPEECH",
-          tags: ["bot", "text_to_speech", "error"],
-        });
-      } else {
-        await this.telemetryService.capture({
-          eventName: "Text to speech",
-          eventType: "TEXT_TO_SPEECH",
-          producer: {
-            channel: "Bhashini",
-            deviceID: null,
-            producerID: userId,
-            platform: "nodejs",
-          },
-          platform: "nodejs",
-          sessionId: userId,
-          context: {
-            userID: userId,
-            conversationID: userId,
-            pageID: null,
-            rollup: undefined,
-          },
-          eventData: {
-            duration: `${Date.now() - audioStartTime}`,
-            audioURL: null,
-            questionGenerated: null,
-            questionSubmitted: res.text,
-            comparisonScore: 0,
-            answer: prompt.inputLanguage,
-            logData: undefined,
-            errorData: undefined,
-          },
-          errorType: "TEXT_TO_SPEECH",
-          tags: ["bot", "text_to_speech"],
-        });
       }
       res["messageId"] = uuid.v4();
       res["conversationId"] = conversation?.id;
       return res;
     } else {
       //translate to english
-      // console.log("Translating to English...")
+      // this.logger.log("Translating to English...")
       let translateStartTime = Date.now();
       if (userInput == "resend OTP") {
         this.monitoringService.incrementResentOTPCount();
@@ -573,40 +366,6 @@ export class AppController {
             sessionId
           )
           if(!response['text']) {
-            await this.telemetryService.capture({
-              eventName: "Translate error",
-              eventType: "TRANSLATE_ERROR",
-              producer: {
-                channel: "Bhashini",
-                deviceID: null,
-                producerID: userId,
-                platform: "nodejs",
-              },
-              platform: "nodejs",
-              sessionId: userId,
-              context: {
-                userID: userId,
-                conversationID: userId,
-                pageID: null,
-                rollup: undefined,
-              },
-              eventData: {
-                duration: `${Date.now() - translateStartTime}`,
-                audioURL: null,
-                questionGenerated: null,
-                questionSubmitted: userInput,
-                comparisonScore: 0,
-                answer: null,
-                logData: undefined,
-                errorData: {
-                  input: userInput,
-                  language: prompt.inputLanguage,
-                  error: response["error"],
-                },
-              },
-              errorType: "TRANSLATE",
-              tags: ["bot", "translate", "error"],
-            });
             errorLogger(
               "Sorry, We are unable to translate given input, please try again"
             );
@@ -619,72 +378,7 @@ export class AppController {
             };
           }
           prompt.inputTextInEnglish = response["text"];
-          // verboseLogger("translated english text =", prompt.inputTextInEnglish)
-          await this.telemetryService.capture({
-            eventName: "Translate",
-            eventType: "TRANSLATE",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - translateStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: userInput,
-              comparisonScore: 0,
-              answer: prompt.inputTextInEnglish,
-              logData: undefined,
-              errorData: undefined,
-            },
-            errorType: null,
-            tags: ["bot", "translate"],
-          });
         } catch (error) {
-          await this.telemetryService.capture({
-            eventName: "Translate error",
-            eventType: "TRANSLATE_ERROR",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - translateStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: userInput,
-              comparisonScore: 0,
-              answer: null,
-              logData: undefined,
-              errorData: {
-                input: userInput,
-                language: prompt.inputLanguage,
-                error: error,
-              },
-            },
-            errorType: "TRANSLATE",
-            tags: ["bot", "translate", "error"],
-          });
           errorLogger(
             "Sorry, We are unable to translate given input, please try again"
           );
@@ -734,13 +428,6 @@ export class AppController {
             prompt.inputTextInEnglish = isOTP ? "1111" : "AB123123123";
           isNumber = true;
         }
-        // let number = prompt.inputTextInEnglish.replace(/\s/g, '')
-        
-        // if(/\d/.test(number)){
-        //   isNumber = true
-        //   prompt.inputTextInEnglish = number.toUpperCase()
-        //   verboseLogger("english text to numbers conversion =",prompt.inputTextInEnglish)
-        // }
       }
     }
 
@@ -763,7 +450,7 @@ export class AppController {
           currentState: state.value,
         };
         botFlowService.state.context = updatedContext;
-        // console.log('Current context:', state.context);
+        // this.logger.log('Current context:', state.context);
         if (state.context.type == "pause") {
           // verboseLogger("paused state", state.value)
           resolve(state);
@@ -818,9 +505,7 @@ export class AppController {
         placeholder = engMessage["label.popUpTitle.short"];
       }
       if (prompt.inputLanguage != Language.en && !isNumber) {
-        let translateStartTime = Date.now();
         try {
-          let inp = result.text;
           let response = await this.aiToolsService.translate(
             Language.en,
             prompt.inputLanguage as Language,
@@ -829,40 +514,6 @@ export class AppController {
             sessionId
           )
           if(!response['text']){
-            await this.telemetryService.capture({
-              eventName: "Translate error",
-              eventType: "TRANSLATE_ERROR",
-              producer: {
-                channel: "Bhashini",
-                deviceID: null,
-                producerID: userId,
-                platform: "nodejs",
-              },
-              platform: "nodejs",
-              sessionId: userId,
-              context: {
-                userID: userId,
-                conversationID: userId,
-                pageID: null,
-                rollup: undefined,
-              },
-              eventData: {
-                duration: `${Date.now() - translateStartTime}`,
-                audioURL: null,
-                questionGenerated: null,
-                questionSubmitted: result.text,
-                comparisonScore: 0,
-                answer: null,
-                logData: undefined,
-                errorData: {
-                  input: userInput,
-                  language: prompt.inputLanguage,
-                  error: response["error"],
-                },
-              },
-              errorType: "TRANSLATE",
-              tags: ["bot", "translate", "error"],
-            });
             errorLogger(
               "Sorry, We are unable to translate given input, please try again"
             );
@@ -872,72 +523,7 @@ export class AppController {
               "Sorry, We are unable to translate given input, please try again";
           }
           result.text = response["text"];
-          // verboseLogger("input language translated text =",result.text)
-          await this.telemetryService.capture({
-            eventName: "Translate",
-            eventType: "TRANSLATE",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - translateStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: inp,
-              comparisonScore: 0,
-              answer: result.text,
-              logData: undefined,
-              errorData: undefined,
-            },
-            errorType: null,
-            tags: ["bot", "translate"],
-          });
         } catch (error) {
-          await this.telemetryService.capture({
-            eventName: "Translate error",
-            eventType: "TRANSLATE_ERROR",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - translateStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: userInput,
-              comparisonScore: 0,
-              answer: null,
-              logData: undefined,
-              errorData: {
-                input: userInput,
-                language: prompt.inputLanguage,
-                error: error,
-              },
-            },
-            errorType: "TRANSLATE",
-            tags: ["bot", "translate", "error"],
-          });
           errorLogger(error);
           this.monitoringService.incrementTotalFailureSessionsCount();
           this.monitoringService.incrementUnableToTranslateCount();
@@ -959,40 +545,6 @@ export class AppController {
             sessionId
           )
           if(!response['text']){
-            await this.telemetryService.capture({
-              eventName: "Translate error",
-              eventType: "TRANSLATE_ERROR",
-              producer: {
-                channel: "Bhashini",
-                deviceID: null,
-                producerID: userId,
-                platform: "nodejs",
-              },
-              platform: "nodejs",
-              sessionId: userId,
-              context: {
-                userID: userId,
-                conversationID: userId,
-                pageID: null,
-                rollup: undefined,
-              },
-              eventData: {
-                duration: `${Date.now() - translateStartTime}`,
-                audioURL: null,
-                questionGenerated: null,
-                questionSubmitted: placeholder,
-                comparisonScore: 0,
-                answer: null,
-                logData: undefined,
-                errorData: {
-                  input: userInput,
-                  language: prompt.inputLanguage,
-                  error: response["error"],
-                },
-              },
-              errorType: "TRANSLATE",
-              tags: ["bot", "translate", "error"],
-            });
             errorLogger(
               "Sorry, We are unable to translate given input, please try again"
             );
@@ -1002,71 +554,7 @@ export class AppController {
               "Sorry, We are unable to translate given input, please try again";
           }
           result["placeholder"] = response["text"];
-          await this.telemetryService.capture({
-            eventName: "Translate",
-            eventType: "TRANSLATE",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - translateStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: placeholder,
-              comparisonScore: 0,
-              answer: result["placeholder"],
-              logData: undefined,
-              errorData: undefined,
-            },
-            errorType: null,
-            tags: ["bot", "translate"],
-          });
         } catch (error) {
-          await this.telemetryService.capture({
-            eventName: "Translate error",
-            eventType: "TRANSLATE_ERROR",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - translateStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: placeholder,
-              comparisonScore: 0,
-              answer: null,
-              logData: undefined,
-              errorData: {
-                input: userInput,
-                language: prompt.inputLanguage,
-                error: error,
-              },
-            },
-            errorType: "TRANSLATE",
-            tags: ["bot", "translate", "error"],
-          });
           errorLogger(error);
           this.monitoringService.incrementTotalFailureSessionsCount();
           this.monitoringService.incrementUnableToTranslateCount();
@@ -1131,78 +619,11 @@ export class AppController {
         let audioStartTime = Date.now();
         textToaudio = removeLinks(textToaudio)
         result['audio'] = await this.aiToolsService.textToSpeech(textToaudio,isNumber ? Language.en : prompt.inputLanguage,promptDto.audioGender,userId,sessionId)
-        if(result['audio']['error']){
-          await this.telemetryService.capture({
-            eventName: "Text to speech error",
-            eventType: "TEXT_TO_SPEECH_ERROR",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - audioStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: textToaudio,
-              comparisonScore: 0,
-              answer: null,
-              logData: undefined,
-              errorData: {
-                input: textToaudio,
-                language: prompt.inputLanguage,
-                error: result["audio"]["error"],
-              },
-            },
-            errorType: "TEXT_TO_SPEECH",
-            tags: ["bot", "text_to_speech", "error"],
-          });
-        } else {
-          await this.telemetryService.capture({
-            eventName: "Text to speech",
-            eventType: "TEXT_TO_SPEECH",
-            producer: {
-              channel: "Bhashini",
-              deviceID: null,
-              producerID: userId,
-              platform: "nodejs",
-            },
-            platform: "nodejs",
-            sessionId: userId,
-            context: {
-              userID: userId,
-              conversationID: userId,
-              pageID: null,
-              rollup: undefined,
-            },
-            eventData: {
-              duration: `${Date.now() - audioStartTime}`,
-              audioURL: null,
-              questionGenerated: null,
-              questionSubmitted: textToaudio,
-              comparisonScore: 0,
-              answer: null,
-              logData: undefined,
-              errorData: undefined,
-            },
-            errorType: null,
-            tags: ["bot", "text_to_speech"],
-          });
-        }
       } catch (error) {
         result["audio"] = { text: "", error: error.message };
       }
     }
-    // console.log("Saving conversation..")
+    // this.logger.log("Saving conversation..")
     conversation = await this.conversationService.saveConversation(
       sessionId,
       userId,

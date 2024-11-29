@@ -4,6 +4,8 @@ import { ConfigService } from "@nestjs/config";
 import { Language } from "../../language";
 import { isMostlyEnglish } from "src/common/utils";
 import { MonitoringService } from "../monitoring/monitoring.service";
+import { LokiLogger } from "../loki-logger/loki-logger.service";
+import { HttpService } from '@nestjs/axios';
 const fetch = require("../../common/fetch");
 const nodefetch = require("node-fetch");
 const { Headers } = require("node-fetch");
@@ -13,13 +15,22 @@ const engMessage = require(filePath);
 
 @Injectable()
 export class AiToolsService {
+  private logger: LokiLogger;
+
   constructor(
     private configService: ConfigService,
     private readonly monitoringService: MonitoringService,
+    private httpService: HttpService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
-  ) {}
+  ) {
+    this.logger = new LokiLogger(
+      AiToolsService.name,
+      httpService,
+      configService
+    );
+  }
+
   async detectLanguage(text: string, userId: string, sessionId: string): Promise<any> {
-    // console.log("DETECTING LANGUAGE....")
     try {
       let input = {
         input: [
@@ -40,7 +51,7 @@ export class AiToolsService {
         sessionId
       )
       if(response["error"]){
-        console.log(response["error"])
+        this.logger.error(response["error"])
         throw new Error(response["error"])
       }
       let language: Language;
@@ -106,7 +117,6 @@ export class AiToolsService {
           {
             input: [
               {
-                // "source": text?.replace("\n",".")
                 "source": textArray[i]
               }
             ]
@@ -115,7 +125,7 @@ export class AiToolsService {
           sessionId
         )
         if(response["error"]){
-          console.log(response["error"])
+          this.logger.error(response["error"])
           throw new Error(response["error"])
         }
         textArray[i] = response?.pipelineResponse[0]?.output[0]?.target;
@@ -128,7 +138,7 @@ export class AiToolsService {
         error: null,
       };
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return {
         text: "",
         error: error,
@@ -174,7 +184,7 @@ export class AiToolsService {
         sessionId
       )
       if(response["error"]){
-        console.log(response["error"])
+        this.logger.error(response["error"])
         throw new Error(response["error"])
       }
       return {
@@ -182,7 +192,7 @@ export class AiToolsService {
         error: null,
       };
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return {
         text: "",
         error: error,
@@ -226,7 +236,7 @@ export class AiToolsService {
         sessionId
       )
       if(response["error"]){
-        console.log(response["error"])
+        this.logger.error(response["error"])
         throw new Error(response["error"])
       }
       return {
@@ -234,7 +244,7 @@ export class AiToolsService {
         error: null,
       };
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return {
         text: "",
         error: error,
@@ -247,16 +257,6 @@ export class AiToolsService {
       var myHeaders = new Headers();
       myHeaders.append("accept", "application/json");
       myHeaders.append("X-API-Key", this.configService.get("WADHWANI_API_KEY"));
-      // let body = {
-      //   text: text
-      // }
-      // let response: any = await fetch(`${this.configService.get("HUGGINGFACE_TEXT_CLASSIFICATION_BASE_URL")}`, {
-      //   headers: myHeaders,
-      //   "body": JSON.stringify(body),
-      //   "method": "POST",
-      //   "mode": "cors",
-      //   "credentials": "omit"
-      // });
       let response: any = await fetch(
         `${this.configService.get(
           "WADHWANI_BASE_URL"
@@ -271,7 +271,7 @@ export class AiToolsService {
       response = await response.text();
       return response;
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return {
         error,
       };
@@ -289,7 +289,7 @@ export class AiToolsService {
       myHeaders.append("accept", "application/json");
       myHeaders.append("X-API-Key", this.configService.get("WADHWANI_API_KEY"));
       let startDate = new Date();
-      console.log(`${startDate}: userId: ${userId} sessionId: ${sessionId} Waiting for ${this.configService.get("WADHWANI_BASE_URL")}/get_bot_response?query=${text}&user_id=${userId}&session_id=${sessionId}&scheme_name=${schemeName} to respond ...`)
+      this.logger.log(`${startDate}: userId: ${userId} sessionId: ${sessionId} Waiting for ${this.configService.get("WADHWANI_BASE_URL")}/get_bot_response?query=${text}&user_id=${userId}&session_id=${sessionId}&scheme_name=${schemeName} to respond ...`)
       let response: any = await fetch(`${this.configService.get("WADHWANI_BASE_URL")}/get_bot_response?query=${text}&user_id=${userId}&session_id=${sessionId}&scheme_name=${schemeName}`, {
         headers: myHeaders,
         "method": "GET",
@@ -298,10 +298,10 @@ export class AiToolsService {
       });
       let endDate = new Date();
       response = await response.json()
-      console.log(`${endDate}: userId: ${userId} sessionId: ${sessionId} URL: ${this.configService.get("WADHWANI_BASE_URL")}/get_bot_response?query=${text}&user_id=${userId}&session_id=${sessionId} Responded succesfully in ${endDate.getTime()-startDate.getTime()} ms.`)
+      this.logger.log(`${endDate}: userId: ${userId} sessionId: ${sessionId} URL: ${this.configService.get("WADHWANI_BASE_URL")}/get_bot_response?query=${text}&user_id=${userId}&session_id=${sessionId} Responded succesfully in ${endDate.getTime()-startDate.getTime()} ms.`)
       return response
     } catch(error){
-      console.log(error)
+      this.logger.error(error)
       return {
         error,
       };
@@ -348,27 +348,27 @@ export class AiToolsService {
 
     requestOptions.callback = function (retry) {
       const elapsed = Date.now() - this.startTime;
-      console.log(`userId: ${this.userId} sessionId: ${this.sessionId} URL: ${this.url} (config API) Re-Trying: ${retry}, Previous failed call Time Taken: ${elapsed}ms`);
-    }.bind(requestOptions);
+      this.logger.error(`userId: ${this.userId} sessionId: ${this.sessionId} URL: ${this.url} (config API) Re-Trying: ${retry}, Previous failed call Time Taken: ${elapsed}ms`);
+    }.bind({...requestOptions, logger: this.logger});
 
     try{
       this.monitoringService.incrementBhashiniCount()
       let startDate = new Date();
-      console.log(`${startDate}: userId: ${userId} sessionId: ${sessionId} Waiting for ${this.configService.get("ULCA_CONFIG_URL")} (config API) to respond ...`)
+      this.logger.log(`${startDate}: userId: ${userId} sessionId: ${sessionId} Waiting for ${this.configService.get("ULCA_CONFIG_URL")} (config API) to respond ...`)
       let response  = await fetch(this.configService.get("ULCA_CONFIG_URL"), requestOptions)
       if(response.status != 200){
-        console.log(response)
+        this.logger.error(response)
         throw new Error(`${new Date()}: API call to '${this.configService.get("ULCA_CONFIG_URL")}' with config '${JSON.stringify(config,null,3)}' failed with status code ${response.status}`)
       }
       let endDate = new Date();
       response = await response.json()
-      console.log(`${endDate}: userId: ${userId} sessionId: ${sessionId} URL: ${this.configService.get("ULCA_CONFIG_URL")} (config API) Responded succesfully in ${endDate.getTime()-startDate.getTime()} ms.`)
+      this.logger.log(`${endDate}: userId: ${userId} sessionId: ${sessionId} URL: ${this.configService.get("ULCA_CONFIG_URL")} (config API) Responded succesfully in ${endDate.getTime()-startDate.getTime()} ms.`)
       this.monitoringService.incrementBhashiniSuccessCount()
       await this.cacheManager.set(cacheKey, response, 86400);
       return response;
     } catch (error) {
       this.monitoringService.incrementBhashiniFailureCount();
-      console.log(error);
+      this.logger.error(error);
       return {
         error,
       };
@@ -422,21 +422,21 @@ export class AiToolsService {
 
     requestOptions.callback = function (retry) {
       const elapsed = Date.now() - this.startTime;
-      console.log(`userId: ${this.userId} sessionId: ${this.sessionId} URL: ${this.url} for task (${this.task}) Re-Trying: ${retry}, Previous failed call Time Taken: ${elapsed}ms`);
-    }.bind(requestOptions);
+      this.logger.error(`userId: ${this.userId} sessionId: ${this.sessionId} URL: ${this.url} for task (${this.task}) Re-Trying: ${retry}, Previous failed call Time Taken: ${elapsed}ms`);
+    }.bind({...requestOptions, logger: this.logger});
 
     try{
       this.monitoringService.incrementBhashiniCount()
       let startDate = new Date();
-      console.log(`${startDate}: userId: ${userId} sessionId: ${sessionId} Waiting for ${url} for task (${task}) to respond ...`)
+      this.logger.log(`${startDate}: userId: ${userId} sessionId: ${sessionId} Waiting for ${url} for task (${task}) to respond ...`)
       let response  = await fetch(url, requestOptions)
       if(response.status != 200){
-        console.log(response)
+        this.logger.error(response)
         throw new Error(`${new Date()}: API call to '${url}' with config '${JSON.stringify(config,null,3)}' failed with status code ${response.status}`)
       }
       let endDate = new Date();
       response = await response.json()
-      console.log(`${endDate}: userId: ${userId} sessionId: ${sessionId} URL: ${url} for task (${task}) Responded succesfully in ${endDate.getTime()-startDate.getTime()} ms.`)
+      this.logger.log(`${endDate}: userId: ${userId} sessionId: ${sessionId} URL: ${url} for task (${task}) Responded succesfully in ${endDate.getTime()-startDate.getTime()} ms.`)
       this.monitoringService.incrementBhashiniSuccessCount()
       if(task != 'asr') {
         await this.cacheManager.set(cacheKey, response, 7200);
@@ -444,7 +444,7 @@ export class AiToolsService {
       return response;
     } catch (error) {
       this.monitoringService.incrementBhashiniFailureCount();
-      console.log(error);
+      this.logger.error(error);
       return {
         error,
       };

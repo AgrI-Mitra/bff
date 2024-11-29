@@ -10,11 +10,12 @@ import helmet from "@fastify/helmet";
 import multipart from "@fastify/multipart";
 import compression from "@fastify/compress";
 import { join } from "path";
-import { CustomLogger } from "./common/logger";
 import { MonitoringService } from "./modules/monitoring/monitoring.service";
+import { LokiLogger } from "./modules/loki-logger/loki-logger.service";
+import { HttpService } from "@nestjs/axios";
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const logger = new CustomLogger("Main");
   process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'
 
   /** Fastify Application */
@@ -29,6 +30,22 @@ async function bootstrap() {
 
   /** Global prefix: Will result in appending of keyword 'admin' at the start of all the request */
   const configService = app.get<ConfigService>(ConfigService);
+  const logger = new LokiLogger(
+    'main',
+    new HttpService(),
+    configService,
+  );
+
+  // Setup Swagger
+  const config = new DocumentBuilder()
+    .setTitle('PM Kisan API Documentation')
+    .setDescription('The PM Kisan API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+
   app.register(helmet, {
     contentSecurityPolicy: {
       directives: {
@@ -41,24 +58,24 @@ async function bootstrap() {
   });
 
   process.on('exit', (code) => {
-    console.log(`Process is exiting with code: ${code}`);
+    logger.log(`Process is exiting with code: ${code}`);
   })
 
   process.on('beforeExit', async () => {
-    console.log("process exit...")
+    logger.log("process exit...")
     const monitoringService = app.get<MonitoringService>(MonitoringService);
     await monitoringService.onExit();
   });
 
   process.on('SIGINT', async () => {
-    console.log('Received SIGINT signal. Gracefully shutting down...');
+    logger.log('Received SIGINT signal. Gracefully shutting down...');
     const monitoringService = app.get<MonitoringService>(MonitoringService);
     await monitoringService.onExit();
     process.exit(0);
   });
 
   process.on('SIGTERM', async () => {
-    console.log('Received SIGTERM signal. Gracefully shutting down...');
+    logger.log('Received SIGTERM signal. Gracefully shutting down...');
     const monitoringService = app.get<MonitoringService>(MonitoringService);
     await monitoringService.onExit();
     process.exit(0);
@@ -72,7 +89,7 @@ async function bootstrap() {
   await app.register(multipart);
   await app.register(compression, { encodings: ["gzip", "deflate"] });
   app.useStaticAssets({ root: join(__dirname, "../../fileUploads") });
-  await app.listen(3000, "0.0.0.0");
+  await app.listen(3001, "0.0.0.0");
 }
 
 bootstrap();

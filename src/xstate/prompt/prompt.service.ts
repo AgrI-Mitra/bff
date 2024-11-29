@@ -15,6 +15,8 @@ import { createMachine } from "xstate";
 import { promptActions } from "./prompt.actions";
 import { promptGuards } from "./prompt.gaurds";
 import { MonitoringService } from "src/modules/monitoring/monitoring.service";
+import { LokiLogger } from "src/modules/loki-logger/loki-logger.service";
+import { HttpService } from "@nestjs/axios";
 const path = require("path");
 const filePath = path.resolve(__dirname, "../../common/kisanPortalErrors.json");
 const PMKissanProtalErrors = require(filePath);
@@ -23,17 +25,21 @@ import * as moment from "moment";
 @Injectable()
 export class PromptServices {
   private userService: UserService;
+  private logger: LokiLogger;
+
   constructor(
     private prismaService: PrismaService,
     private configService: ConfigService,
     private aiToolsService: AiToolsService,
-    private monitoringService: MonitoringService
+    private monitoringService: MonitoringService,
+    private httpService: HttpService
   ) {
     this.userService = new UserService(
       this.prismaService,
       this.configService,
       this.monitoringService
     );
+    this.logger = new LokiLogger('prompt', this.httpService, this.configService);
   }
 
   async getInput(context) {
@@ -41,18 +47,10 @@ export class PromptServices {
   }
 
     async questionClassifier (context) {
-        // console.log("IN questionclassifier")
+        this.logger.log("IN questionclassifier");
         try{
             let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId, context.query, context.schemeName)
             if (response.error) throw new Error(`${response.error}, please try again.`)
-            // {
-            //     "user_id": "19877818",
-            //     "session_id": "123456",
-            //     "query": "Installment not received",
-            //     "query_intent": "Installment not received",
-            //     "language": "English",
-            //     "response": "Dear Beneficiary, You can check your status using Know Your Status (KYS) module at https://pmkisan.gov.in/BeneficiaryStatus_New.aspx. \nIf you are not satisfied with the status, please contact the PM Kisan officer Shri ABC on 9809898989 or you can also visit the Officer at PM Kisan Officer, 193310 village, 868 block, 965 sub-district, 123 district, 9, Pincode: . \nFor further assistant, please contact on the PM Kisan Samman Nidhi helpline number: 155261 / 011-24300606. The helpline is available on all working days from 9:30 AM to 6:00 PM."
-            //   }
             let intent;
             if (response.query_intent == "Invalid") intent = "convo"
             if (response.query_intent == "convo_starter") intent =  "convo"
@@ -71,13 +69,13 @@ export class PromptServices {
     }
 
   async logError(_, event) {
-    console.log("logError");
-    console.log(event.data);
+    this.logger.log("logError");
+    this.logger.log(event.data);
     return event.data;
   }
 
   async validateAadhaarNumber(context, event) {
-    console.log("validate aadhar");
+    this.logger.log("validate aadhar");
     try {
       const userIdentifier = `${context.userAadhaarNumber}${context.lastAadhaarDigits}`;
       let res;
@@ -112,13 +110,13 @@ export class PromptServices {
       this.monitoringService.incrementSomethingWentWrongCount();
       throw new Error("Something went wrong.");
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return Promise.reject(new Error("Something went wrong."));
     }
   }
 
   async validateOTP(context, event) {
-    console.log("Validate OTP");
+    this.logger.log("Validate OTP");
     const userIdentifier = `${context.userAadhaarNumber}${context.lastAadhaarDigits}`;
     const otp = context.otp;
     let res;
@@ -157,7 +155,7 @@ export class PromptServices {
   }
 
   async fetchUserData(context, event) {
-    console.log("Fetch user data");
+    this.logger.log("Fetch user data");
     const userIdentifier = `${context.userAadhaarNumber}${context.lastAadhaarDigits}`;
     let res;
     let type = "Mobile";
@@ -201,8 +199,8 @@ export class PromptServices {
       res.d.output["eKYC_Status"]
     );
 
-    console.log("ChatbotBeneficiaryStatus");
-    console.log("using...", userIdentifier, type);
+    this.logger.log("ChatbotBeneficiaryStatus");
+    this.logger.log("using...", userIdentifier, type);
     let userErrors = [];
     try {
       let encryptedData = await encryptRequest(
@@ -213,7 +211,7 @@ export class PromptServices {
       let data = JSON.stringify({
         EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
       });
-      console.log("body", data);
+      this.logger.log("body", data);
 
       let config = {
         method: "post",
@@ -229,7 +227,7 @@ export class PromptServices {
 
       let errors: any = await axios.request(config);
       errors = await errors.data;
-      console.log("related issues", errors);
+      this.logger.log("related issues", errors);
       let decryptedData: any = await decryptRequest(
         errors.d.output,
         encryptedData.d.token
@@ -245,7 +243,7 @@ export class PromptServices {
                 context.queryType
               ) != -1
             ) {
-              console.log(`ERRORVALUE: ${key} ${value}`);
+              this.logger.log(`ERRORVALUE: ${key} ${value}`);
               userErrors.push(
                 PMKissanProtalErrors[`${value}`]["text"].replace(
                   "{{farmer_name}}",
@@ -274,14 +272,14 @@ export class PromptServices {
         );
       }
     } catch (error) {
-      console.log("ChatbotBeneficiaryStatus error");
-      console.log(error);
+      this.logger.error("ChatbotBeneficiaryStatus error");
+      this.logger.error(error);
     }
     return `${userDetails}${userErrors.join("\n")}`;
   }
 
   async wadhwaniClassifier(context) {
-    console.log("Wadhwani Classifierrr");
+    this.logger.log("Wadhwani Classifierrr");
     try {
       let response: any = await this.aiToolsService.getResponseViaWadhwani(
         context.sessionId,

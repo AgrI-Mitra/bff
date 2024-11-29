@@ -52,40 +52,6 @@ model Metrics {
   value           String
 }
 
-model telemetry_logs {
-  eid                             String   @db.Uuid @default(uuid())
-  createdAt                       DateTime @default(now())
-  eventType                       String
-  eventName                       String
-  producer                        Json
-  platform                        String
-  // producerChannel                 String
-  // producerDeviceID                String?
-  // producerProducerID              String   @db.Uuid
-  // producerPlatform                String
-  context                         Json
-  sessionId                       String   @db.Uuid
-  // contextUserID                   String   @db.Uuid
-  // contextConversationID           String?   @db.Uuid
-  // contextPageID                   String?
-  // contextRollup                   Json?
-  eventData                       Json
-  // eventDataTimestamp              DateTime @default(now())
-  // eventDataDuration               String?
-  // eventDataAudioURL               String?
-  // eventDataQuestionGenerated      String?
-  // eventDataQuestionSubmitted      String?
-  // eventDataComparisonScore        Int?
-  // eventDataAnswer                 String?
-  // eventDataFeedbackScore          Int      @default(0) @db.SmallInt
-  // eventDataLogData                Json?
-  // eventDataErrorData              Json?
-  errorType                       String?
-  tags                            Json?
-
-  @@unique([eid,createdAt])
-}
-
 model feedback {
   id                      Int             @id @default(autoincrement())
   conversation            conversation?   @relation(fields: [conversationId], references: [id])
