@@ -1,6 +1,7 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../global-services/prisma.service";
 import { ConfigService } from "@nestjs/config";
+import { CustomLogger } from "../../common/logger";
 import axios from "axios";
 import { decryptRequest, encrypt, encryptRequest } from "../../common/utils";
 import { Message } from "@prisma/client";
@@ -9,13 +10,13 @@ import { getUniqueKey } from "../../common/utils";
 
 @Injectable()
 export class UserService {
-  private logger: Logger;
+  private logger: CustomLogger;
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
     private monitoringService: MonitoringService
   ) {
-    this.logger = new Logger('main');
+    this.logger = new CustomLogger("UserService");
   }
 
   async sendOTP(mobileNumber: string, type: string = "Mobile"): Promise<any> {
@@ -50,7 +51,7 @@ export class UserService {
         data: data,
       };
       let response: any = await axios.request(config);
-      this.logger.log("sendOTP", response.status);
+      console.log("sendOTP", response.status);
       if (response.status >= 200 && response.status < 300) {
         response = await response.data;
         let decryptedData: any = await decryptRequest(
@@ -76,7 +77,9 @@ export class UserService {
         };
       }
     } catch (error) {
+
       console.error("Error in sendOTP:", error.message, error.response?.data || error);
+
       return {
         d: {
           output: {
@@ -134,7 +137,7 @@ export class UserService {
       };
 
       let response: any = await axios.request(config);
-      this.logger.log("verifyOTP", response.status);
+      console.log("verifyOTP", response.status);
       if (response.status >= 200 && response.status < 300) {
         response = await response.data;
         let decryptedData: any = await decryptRequest(
@@ -158,7 +161,7 @@ export class UserService {
         };
       }
     } catch (error) {
-      this.logger.error(error);
+      console.log(error);
       return {
         d: {
           output: {
@@ -210,7 +213,7 @@ export class UserService {
         data: data,
       };
       res = await axios.request(config);
-      this.logger.log("getUserData", res.status);
+      console.log("getUserData", res.status);
       if (res.status >= 200 && res.status < 300) {
         res = await res.data;
         let decryptedData: any = await decryptRequest(

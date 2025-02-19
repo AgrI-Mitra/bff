@@ -4,13 +4,6 @@ const crypto = require('crypto');
 
 const fetch = require("node-fetch");
 const { Headers } = fetch;
-const { Logger } = require('@nestjs/common');
-const { HttpService } = require('@nestjs/axios');
-const { ConfigService } = require('@nestjs/config');
-
-const logger = new Logger(
-  'utils'
-);
 
 export function isMostlyEnglish(text: string): boolean {
   const englishCharacterCount = (
@@ -231,6 +224,7 @@ export function decrypt(textToDecrypt: string, key: string): string {
 
 export const encryptRequest = async (text: string) => {
   try {
+
     console.log("text to encrypt is : ", text);
     // var myHeaders = new Headers();
     // myHeaders.append("Content-Type", "application/json");
