@@ -1,5 +1,16 @@
+import { ConstraintMetadata } from "class-validator/types/metadata/ConstraintMetadata";
+import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+const crypto = require('crypto');
+
 const fetch = require("node-fetch");
 const { Headers } = fetch;
+const { Logger } = require('@nestjs/common');
+const { HttpService } = require('@nestjs/axios');
+const { ConfigService } = require('@nestjs/config');
+
+const logger = new Logger(
+  'utils'
+);
 
 export function isMostlyEnglish(text: string): boolean {
   const englishCharacterCount = (
@@ -144,29 +155,108 @@ export const wordToNumber = (input, type = "benId") => {
   }
 };
 
+export const getUniqueKey = (maxSize = 15): string => {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+  const data = new Uint8Array(maxSize);
+  crypto.getRandomValues(data);
+  
+  const result = Array.from(data)
+      .map(byte => chars[byte % chars.length])
+      .join('')
+      .toUpperCase();
+  console.log(result)
+  return result;
+}
+
+
+//Encryption Method
+export function encrypt(textToEncrypt: string, key: string): string {
+  try {
+    // Ensure the key is 16 bytes (AES-128)
+    const keyBytes = Buffer.alloc(16, 0); // Create a 16-byte buffer filled with zeros
+    const pwdBytes = Buffer.from(key, 'utf8');
+    pwdBytes.copy(keyBytes, 0, 0, Math.min(pwdBytes.length, keyBytes.length));
+
+    const iv = keyBytes; // Use the same value for IV and key
+    const cipher = crypto.createCipheriv('aes-128-cbc', keyBytes, iv);
+
+    // Encrypt the plaintext
+    const encrypted = Buffer.concat([
+      cipher.update(Buffer.from(textToEncrypt, 'utf8')),
+      cipher.final(),
+    ]);
+
+    // Return the encrypted text as Base64
+    return encrypted.toString('base64');
+  } catch (error) {
+    console.error("Error while encrypting the message:", error);
+    return "Error while encrypting the message."
+  }
+}
+
+
+
+
+//Decryption Method
+export function decrypt(textToDecrypt: string, key: string): string {
+  try {
+    const keyBytes = Buffer.alloc(16); // Create a buffer of 16 bytes for the key
+    const pwdBytes = Buffer.from(key, 'utf-8'); // Convert the key to bytes
+    const len = Math.min(pwdBytes.length, keyBytes.length);
+    pwdBytes.copy(keyBytes, 0, 0, len); // Copy the key into the buffer
+
+    const encryptedData = Buffer.from(textToDecrypt, 'base64'); // Convert the encrypted text from Base64 to bytes
+
+    // Initialize the cipher configuration
+    const decipher = createDecipheriv('aes-128-cbc', keyBytes, keyBytes);
+    decipher.setAutoPadding(false); // Set auto padding to false
+
+    // Decrypt the data
+    let decrypted = decipher.update(encryptedData);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+    // Convert the decrypted data to a UTF-8 string
+    let decryptedText = decrypted.toString('utf-8');
+
+    // Trim the decrypted text to remove padding and get the JSON object
+    const lastIndex = decryptedText.lastIndexOf('}');
+    const trimmedText = lastIndex !== -1 ? decryptedText.substring(0, lastIndex + 1) : decryptedText;
+
+    return trimmedText;
+  } catch (error) {
+    console.error("Error while decrypting the message:", error);
+    return "Error while decrypting the message."
+  }
+}
+
 export const encryptRequest = async (text: string) => {
   try {
-    var myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    console.log("text: ", text);
-    var raw = JSON.stringify({
-      EncryptedRequest: text,
-    });
+    console.log("text to encrypt is : ", text);
+    // var myHeaders = new Headers();
+    // myHeaders.append("Content-Type", "application/json");
+    // console.log("text: ", text);
+    // var raw = JSON.stringify({
+    //   EncryptedRequest: text,
+    // });
 
-    var requestOptions: any = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
+    // var requestOptions: any = {
+    //   method: "POST",
+    //   headers: myHeaders,
+    //   body: raw,
+    //   redirect: "follow",
+    // };
 
-    let response: any = await fetch(
-      `${process.env.PM_KISAN_ENC_DEC_API}/EncryptedRequest`,
-      requestOptions
-    );
-    response = await response.json();
-    return response;
+    // let response: any = await fetch(
+    //   `${process.env.PM_KISAN_ENC_DEC_API}/EncryptedRequest`,
+    //   requestOptions
+    // );
+
+ // Extract Token from the parsed text
+
+    // response = await response.json();
+    
   } catch (error) {
+    console.error("Error while encrypting the message:", error);
     return {
       error: "Error while encrypting the message.",
     };
@@ -175,25 +265,26 @@ export const encryptRequest = async (text: string) => {
 
 export const decryptRequest = async (text: string, token: string) => {
   try {
-    var myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-
+    console.log("the text for decryption is : ", text);
+    console.log("the token for decryption is : ", token);
     var raw = JSON.stringify({
       DecryptedRequest: `${text}@${token}`,
     });
+    // text = "jhp8OW+FdOFZJck8eIm6mx1DSWwPghgYKFRwu7e+Ppj72A++R10Vaa7p7+KtLTQtnaK2mZv3I8TwiJo+pr1jjnrh/2cRjlK23REX2mJf10osnDpD2AFI8ihoFb/ShNAReW4Jj5fqVGdPYVX8peWn51Cu2iD0WouyOHrl9OwZ4b8="
+    // var requestOptions: any = {
+    //   method: "POST",
+    //   headers: myHeaders,
+    //   body: raw,
+    //   redirect: "follow",
+    // };
 
-    var requestOptions: any = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
-
-    let response = await fetch(
-      `${process.env.PM_KISAN_ENC_DEC_API}/DecryptedRequest`,
-      requestOptions
-    );
-    response = await response.json();
+    // let response = await fetch(
+    //   `${process.env.PM_KISAN_ENC_DEC_API}/DecryptedRequest`,
+    //   requestOptions
+    // );
+    let response = await decrypt(text, token);
+    // response = await response.json();
+    console.log("the response from decrypt request: ", response);
     return response;
   } catch (error) {
     return {

@@ -1,18 +1,16 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../global-services/prisma.service";
 import { ConfigService } from "@nestjs/config";
-import { CustomLogger } from "../../common/logger";
 import { feedback } from "@prisma/client";
-
 
 @Injectable()
 export class ConversationService {
-  private logger: CustomLogger;
+  private logger: Logger;
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService
   ) {
-    this.logger = new CustomLogger("ConversationService");
+    this.logger = new Logger('main');
   }
 
   async saveConversation(

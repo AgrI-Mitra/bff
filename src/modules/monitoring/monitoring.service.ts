@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Counter } from 'prom-client';
 import { PrismaService } from '../../global-services/prisma.service';
+import { CacheProvider } from '../cache/cache.provider';
 
 @Injectable()
 export class MonitoringService {
-  constructor(private prismaService: PrismaService){}
+  constructor(private prismaService: PrismaService, private cache: CacheProvider) {}
 
-  async initializeAsync(){
+  async initializeAsync() {
     const metricsToUpsert: any = [
       { name: 'bhashiniCount' },
       { name: 'bhashiniSuccessCount' },
@@ -42,130 +43,130 @@ export class MonitoringService {
       { name: "untrainedQueryCount" },
       { name: "resentOTPCount" },
       { name: "stage1Count" },
-      { name: "stage2Count" },  
+      { name: "stage2Count" },
       { name: "stage3Count" },
       { name: "stage4Count" },
       { name: "stage5Count" },
     ];
-    for (const metric of metricsToUpsert){
+    for (const metric of metricsToUpsert) {
       const existingMetric: any = await this.prismaService.metrics.findUnique({
         where: { name: metric.name },
       });
-      if(existingMetric){
-        switch(existingMetric.name){
+      if (existingMetric) {
+        switch (existingMetric.name) {
           case 'bhashiniCount':
-            this.bhashiniCounter.inc(parseInt(existingMetric.value));
+            this.bhashiniCounter.inc(parseInt((await this.cache.get('bhashiniCount')) || '0'));
             break;
           case 'bhashiniSuccessCount':
-            this.bhashiniSuccessCounter.inc(parseInt(existingMetric.value));
+            this.bhashiniSuccessCounter.inc(parseInt((await this.cache.get('bhashiniSuccessCount')) || '0'));
             break;
           case 'bhashiniFailureCount':
-            this.bhashiniFailureCounter.inc(parseInt(existingMetric.value));
+            this.bhashiniFailureCounter.inc(parseInt((await this.cache.get('bhashiniFailureCount')) || '0'));
             break;
           case 'totalSessions':
-            this.totalSessionsCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsCounter.inc(parseInt((await this.cache.get('totalSessions')) || '0'));
             break;
           case 'totalSuccessfullSessions':
-            this.totalSuccessfullSessionsCounter.inc(parseInt(existingMetric.value));
+            this.totalSuccessfullSessionsCounter.inc(parseInt((await this.cache.get('totalSuccessfullSessions')) || '0'));
             break;
-          case 'totalFailureSessions' :
-            this.totalFailureSessionsCounter.inc(parseInt(existingMetric.value));
+          case 'totalFailureSessions':
+            this.totalFailureSessionsCounter.inc(parseInt((await this.cache.get('totalFailureSessions')) || '0'));
             break;
           case 'totalIncompleteSessions':
-            this.totalIncompleteSessionsCounter.inc(parseInt(existingMetric.value));
+            this.totalIncompleteSessionsCounter.inc(parseInt((await this.cache.get('totalIncompleteSessions')) || '0'));
             break
           case 'totalSessionsInHindi':
-            this.totalSessionsInHindiCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsInHindiCounter.inc(parseInt((await this.cache.get('totalSessionsInHindi')) || '0'));
             break;
           case 'totalSessionsInTamil':
-            this.totalSessionsInTamilCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsInTamilCounter.inc(parseInt((await this.cache.get('totalSessionsInTamil')) || '0'));
             break;
           case 'totalSessionsInOdia':
-            this.totalSessionsInOdiaCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsInOdiaCounter.inc(parseInt((await this.cache.get('totalSessionsInOdia')) || '0'));
             break;
           case 'totalSessionsInTelugu':
-            this.totalSessionsInTeluguCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsInTeluguCounter.inc(parseInt((await this.cache.get('totalSessionsInTelugu')) || '0'));
             break;
           case 'totalSessionsInMarathi':
-            this.totalSessionsInMarathiCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsInMarathiCounter.inc(parseInt((await this.cache.get('totalSessionsInMarathi')) || '0'));
             break;
           case 'totalSessionsInBangla':
-            this.totalSessionsInBanglaCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsInBanglaCounter.inc(parseInt((await this.cache.get('totalSessionsInBangla')) || '0'));
             break;
           case 'totalSessionsInEnglish':
-            this.totalSessionsInEnglishCounter.inc(parseInt(existingMetric.value));
+            this.totalSessionsInEnglishCounter.inc(parseInt((await this.cache.get('totalSessionsInEnglish')) || '0'));
             break;
           case "aadhaarCount":
-            this.aadhaarCounter.inc(parseInt(existingMetric.value));
+            this.aadhaarCounter.inc(parseInt((await this.cache.get('aadhaarCount')) || '0'));
             break;
           case "registrationIdCount":
-            this.registrationIdCounter.inc(parseInt(existingMetric.value));
+            this.registrationIdCounter.inc(parseInt((await this.cache.get('registrationIdCount')) || '0'));
             break;
           case "mobileNumberCount":
-            this.mobileNumberCounter.inc(parseInt(existingMetric.value));
+            this.mobileNumberCounter.inc(parseInt((await this.cache.get('mobileNumberCount')) || '0'));
             break;
           case "positveFeedbackCount":
-            this.positveFeedbackCounter.inc(parseInt(existingMetric.value));
+            this.positveFeedbackCounter.inc(parseInt((await this.cache.get('positveFeedbackCount')) || '0'));
             break;
           case "negativeFeedbackCount":
-            this.negativeFeedbackCounter.inc(parseInt(existingMetric.value));
+            this.negativeFeedbackCounter.inc(parseInt((await this.cache.get('negativeFeedbackCount')) || '0'));
             break;
           case "micUsedCount":
-            this.micUsedCounter.inc(parseInt(existingMetric.value));
+            this.micUsedCounter.inc(parseInt((await this.cache.get('micUsedCount')) || '0'));
             break;
           case "directMessageTypedCount":
-            this.directMessageTypedCounter.inc(parseInt(existingMetric.value));
+            this.directMessageTypedCounter.inc(parseInt((await this.cache.get('directMessageTypedCount')) || '0'));
             break;
           case "sampleQueryUsedCount":
-            this.sampleQueryUsedCounter.inc(parseInt(existingMetric.value));
+            this.sampleQueryUsedCounter.inc(parseInt((await this.cache.get('sampleQueryUsedCount')) || '0'));
             break;
           case "internalServerErrorCount":
-            this.internalServerErrorCounter.inc(parseInt(existingMetric.value));
+            this.internalServerErrorCounter.inc(parseInt((await this.cache.get('internalServerErrorCount')) || '0'));
             break;
           case "badGatewayCount":
-            this.badGatewayCounter.inc(parseInt(existingMetric.value));
+            this.badGatewayCounter.inc(parseInt((await this.cache.get('badGatewayCount')) || '0'));
             break;
           case "gatewayTimeoutCount":
-            this.gatewayTimeoutCounter.inc(parseInt(existingMetric.value));
+            this.gatewayTimeoutCounter.inc(parseInt((await this.cache.get('gatewayTimeoutCount')) || '0'));
             break;
           case "somethingWentWrongCount":
-            this.somethingWentWrongCounter.inc(parseInt(existingMetric.value));
+            this.somethingWentWrongCounter.inc(parseInt((await this.cache.get('somethingWentWrongCount')) || '0'));
             break;
           case "unsupportedMediaCount":
-            this.unsupportedMediaCounter.inc(parseInt(existingMetric.value));
+            this.unsupportedMediaCounter.inc(parseInt((await this.cache.get('unsupportedMediaCount')) || '0'));
             break;
           case "unableToTranslateCount":
-            this.unableToTranslateCounter.inc(parseInt(existingMetric.value));
+            this.unableToTranslateCounter.inc(parseInt((await this.cache.get('unableToTranslateCount')) || '0'));
             break;
           case "somethingWentWrongTryAgainCount":
-            this.somethingWentWrongTryAgainCounter.inc(parseInt(existingMetric.value));
+            this.somethingWentWrongTryAgainCounter.inc(parseInt((await this.cache.get('somethingWentWrongTryAgainCount')) || '0'));
             break;
           case "unableToGetUserDetailsCount":
-            this.unableToGetUserDetailsCounter.inc(parseInt(existingMetric.value));
+            this.unableToGetUserDetailsCounter.inc(parseInt((await this.cache.get('unableToGetUserDetailsCount')) || '0'));
             break;
-          case  "noUserRecordsFoundCount":
-            this.noUserRecordsFoundCounter.inc(parseInt(existingMetric.value));
+          case "noUserRecordsFoundCount":
+            this.noUserRecordsFoundCounter.inc(parseInt((await this.cache.get('noUserRecordsFoundCount')) || '0'));
             break;
           case "untrainedQueryCount":
-            this.untrainedQueryCounter.inc(parseInt(existingMetric.value));
+            this.untrainedQueryCounter.inc(parseInt((await this.cache.get('untrainedQueryCount')) || '0'));
             break;
           case "resentOTPCount":
-            this.resentOTPCounter.inc(parseInt(existingMetric.value));
+            this.resentOTPCounter.inc(parseInt((await this.cache.get('resentOTPCount')) || '0'));
             break;
           case "stage1Count":
-            this.stage1Counter.inc(parseInt(existingMetric.value));
+            this.stage1Counter.inc(parseInt((await this.cache.get('stage1Count')) || '0'));
             break;
           case "stage2Count":
-            this.stage2Counter.inc(parseInt(existingMetric.value));
+            this.stage2Counter.inc(parseInt((await this.cache.get('stage2Count')) || '0'));
             break;
           case "stage3Count":
-            this.stage3Counter.inc(parseInt(existingMetric.value));
+            this.stage3Counter.inc(parseInt((await this.cache.get('stage3Count')) || '0'));
             break;
           case "stage4Count":
-            this.stage4Counter.inc(parseInt(existingMetric.value));
+            this.stage4Counter.inc(parseInt((await this.cache.get('stage4Count')) || '0'));
             break;
           case "stage5Count":
-            this.stage5Counter.inc(parseInt(existingMetric.value));
+            this.stage5Counter.inc(parseInt((await this.cache.get('stage5Count')) || '0'));
             break;
           default:
             break;
@@ -236,7 +237,7 @@ export class MonitoringService {
     name: 'total_sessions_in_bangla_count',
     help: 'Counts the API requests of /prompt API',
   });
-  
+
   private totalSessionsInEnglishCounter: Counter<string> = new Counter({
     name: 'total_sessions_in_english_count',
     help: 'Counts the API requests of /prompt API',
@@ -381,7 +382,7 @@ export class MonitoringService {
     let count = await this.totalSessionsCounter.get();
     return count.values[0].value;
   }
-  
+
   public async getTotalSuccessfullSessionsCount() {
     let count = await this.totalSuccessfullSessionsCounter.get();
     return count.values[0].value;
@@ -441,7 +442,7 @@ export class MonitoringService {
     let count = await this.registrationIdCounter.get();
     return count.values[0].value;
   }
-  
+
   public async getMobileNumberCount() {
     let count = await this.mobileNumberCounter.get();
     return count.values[0].value;
@@ -554,10 +555,12 @@ export class MonitoringService {
 
   public incrementBhashiniCount(): void {
     this.bhashiniCounter.inc();
+    this.cache.increment('bhashiniCount');
   }
 
   public incrementBhashiniSuccessCount(): void {
     this.bhashiniSuccessCounter.inc();
+    this.cache.increment('bhashiniSuccessCount');
   }
 
   public incrementBhashiniFailureCount(): void {
@@ -566,149 +569,184 @@ export class MonitoringService {
 
   public incrementTotalSessionsCount() {
     this.totalSessionsCounter.inc();
+    this.cache.increment('totalSessions');
   }
 
   public incrementTotalSuccessfullSessionsCount() {
     this.totalSuccessfullSessionsCounter.inc();
+    this.cache.increment('totalSuccessfullSessions');
   }
 
   public incrementTotalFailureSessionsCount() {
     this.totalFailureSessionsCounter.inc();
+    this.cache.increment('totalFailureSessions');
   }
 
   public incrementTotalIncompleteSessionsCount() {
     this.totalIncompleteSessionsCounter.inc();
+    this.cache.increment('totalIncompleteSessions');
   }
 
   public incrementTotalSessionsInHindiCount() {
     this.totalSessionsInHindiCounter.inc();
+    this.cache.increment('totalSessionsInHindi');
   }
 
   public incrementTotalSessionsInTamilCount() {
     this.totalSessionsInTamilCounter.inc();
+    this.cache.increment('totalSessionsInTamil');
   }
 
   public incrementTotalSessionsInOdiaCount() {
     this.totalSessionsInOdiaCounter.inc();
+    this.cache.increment('totalSessionsInOdia');
   }
 
   public incrementTotalSessionsInTeluguCount() {
     this.totalSessionsInTeluguCounter.inc();
+    this.cache.increment('totalSessionsInTelugu');
   }
 
   public incrementTotalSessionsInMarathiCount() {
     this.totalSessionsInMarathiCounter.inc();
+    this.cache.increment('totalSessionsInMarathi');
   }
 
   public incrementTotalSessionsInBanglaCount() {
     this.totalSessionsInBanglaCounter.inc();
+    this.cache.increment('totalSessionsInBangla');
   }
 
   public incrementTotalSessionsInEnglishCount() {
     this.totalSessionsInEnglishCounter.inc();
+    this.cache.increment('totalSessionsInEnglish');
   }
 
   public incrementAadhaarCount() {
     this.aadhaarCounter.inc();
+    this.cache.increment('aadhaarCount');
   }
 
   public incrementRegistrationIdCount() {
     this.registrationIdCounter.inc();
+    this.cache.increment('registrationIdCount');
   }
-  
+
   public incrementMobileNumberCount() {
     this.mobileNumberCounter.inc();
+    this.cache.increment('mobileNumberCount');
   }
 
   public incrementPositveFeedbackCount() {
     this.positveFeedbackCounter.inc();
+    this.cache.increment('positveFeedbackCount');
   }
 
   public incrementNegativeFeedbackCount() {
     this.negativeFeedbackCounter.inc();
+    this.cache.increment('negativeFeedbackCount');
   }
 
   public incrementMicUsedCount() {
     this.micUsedCounter.inc();
+    this.cache.increment('micUsedCount');
   }
 
   public incrementDirectMessageTypedCount() {
     this.directMessageTypedCounter.inc();
+    this.cache.increment('directMessageTypedCount');
   }
 
   public incrementSampleQueryUsedCount() {
     this.sampleQueryUsedCounter.inc();
+    this.cache.increment('sampleQueryUsedCount');
   }
 
   public incrementInternalServerErrorCount() {
     this.internalServerErrorCounter.inc();
+    this.cache.increment('internalServerErrorCount');
   }
 
   public incrementBadGatewayCount() {
     this.badGatewayCounter.inc();
+    this.cache.increment('badGatewayCount');
   }
 
   public incrementGatewayTimeoutCount() {
     this.gatewayTimeoutCounter.inc();
+    this.cache.increment('gatewayTimeoutCount');
   }
 
   public incrementSomethingWentWrongCount() {
     this.somethingWentWrongCounter.inc();
+    this.cache.increment('somethingWentWrongCount');
   }
 
   public incrementUnsupportedMediaCount() {
     this.unsupportedMediaCounter.inc();
+    this.cache.increment('unsupportedMediaCount');
   }
 
   public incrementUnableToTranslateCount() {
     this.unableToTranslateCounter.inc();
+    this.cache.increment('unableToTranslateCount');
   }
 
   public incrementSomethingWentWrongTryAgainCount() {
     this.somethingWentWrongTryAgainCounter.inc();
+    this.cache.increment('somethingWentWrongTryAgainCount');
   }
 
   public incrementUnableToGetUserDetailsCount() {
     this.unableToGetUserDetailsCounter.inc();
+    this.cache.increment('unableToGetUserDetailsCount');
   }
 
   public incrementNoUserRecordsFoundCount() {
     this.noUserRecordsFoundCounter.inc();
+    this.cache.increment('noUserRecordsFoundCount');
   }
 
   public incrementUntrainedQueryCount() {
     this.untrainedQueryCounter.inc();
+    this.cache.increment('untrainedQueryCount');
   }
 
   public incrementResentOTPCount() {
     this.resentOTPCounter.inc();
+    this.cache.increment('resentOTPCount');
   }
 
   public incrementStage1Count() {
     this.stage1Counter.inc();
+    this.cache.increment('stage1Count');
   }
 
   public incrementStage2Count() {
     this.stage2Counter.inc();
+    this.cache.increment('stage2Count');
   }
 
   public incrementStage3Count() {
     this.stage3Counter.inc();
+    this.cache.increment('stage3Count');
   }
 
   public incrementStage4Count() {
     this.stage4Counter.inc();
+    this.cache.increment('stage4Count');
   }
 
   public incrementStage5Count() {
     this.stage5Counter.inc();
+    this.cache.increment('stage5Count');
   }
 
   public async onExit(): Promise<void> {
     const metricsToUpsert: any = [
-      { name: 'bhashiniCount', value: `${await this.getBhashiniCount()}`},
-      { name: 'bhashiniSuccessCount', value: `${await this.getBhashiniSuccessCount()}`},
-      { name: 'bhashiniFailureCount', value: `${await this.getBhashiniFailureCount()}`},
+      { name: 'bhashiniCount', value: `${await this.getBhashiniCount()}` },
+      { name: 'bhashiniSuccessCount', value: `${await this.getBhashiniSuccessCount()}` },
+      { name: 'bhashiniFailureCount', value: `${await this.getBhashiniFailureCount()}` },
       { name: 'totalSessions', value: `${await this.getTotalSessionsCount()}` },
       { name: 'totalSuccessfullSessions', value: `${await this.getTotalSuccessfullSessionsCount()}` },
       { name: 'totalFailureSessions', value: `${await this.getTotalFailureSessionsCount()}` },
@@ -746,12 +784,12 @@ export class MonitoringService {
       { name: "stage5Count", value: `${await this.getStage5Count()}` },
     ];
     const upsertedMetrics = [];
-    try{
+    try {
       for (const metric of metricsToUpsert) {
         const existingMetric: any = await this.prismaService.metrics.findUnique({
           where: { name: metric.name },
         });
-  
+
         if (existingMetric) {
           const updatedMetric = await this.prismaService.metrics.update({
             where: { id: existingMetric.id },
@@ -765,19 +803,19 @@ export class MonitoringService {
           upsertedMetrics.push(createdMetric);
         }
       }
-    } catch(err){
+    } catch (err) {
       console.log(err)
     }
   }
 
   public async setMetrics(metricsToUpsert): Promise<void> {
     const upsertedMetrics = [];
-    try{
+    try {
       for (const metric of metricsToUpsert) {
         const existingMetric: any = await this.prismaService.metrics.findUnique({
           where: { name: metric.name },
         });
-  
+
         if (existingMetric) {
           const updatedMetric = await this.prismaService.metrics.update({
             where: { id: existingMetric.id },
@@ -791,9 +829,8 @@ export class MonitoringService {
           upsertedMetrics.push(createdMetric);
         }
       }
-    } catch(err){
+    } catch (err) {
       console.log(err)
     }
   }
-
 }

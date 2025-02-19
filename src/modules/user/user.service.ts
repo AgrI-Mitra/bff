@@ -1,34 +1,44 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../global-services/prisma.service";
 import { ConfigService } from "@nestjs/config";
-import { CustomLogger } from "../../common/logger";
 import axios from "axios";
-import { decryptRequest, encryptRequest } from "../../common/utils";
+import { decryptRequest, encrypt, encryptRequest } from "../../common/utils";
 import { Message } from "@prisma/client";
 import { MonitoringService } from "../monitoring/monitoring.service";
+import { getUniqueKey } from "../../common/utils";
 
 @Injectable()
 export class UserService {
-  private logger: CustomLogger;
+  private logger: Logger;
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
     private monitoringService: MonitoringService
   ) {
-    this.logger = new CustomLogger("UserService");
+    this.logger = new Logger('main');
   }
 
   async sendOTP(mobileNumber: string, type: string = "Mobile"): Promise<any> {
     try {
-      let encryptedData = await encryptRequest(
-        `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get(
-          "PM_KISSAN_TOKEN"
-        )}\"}`
-      );
-      console.log("encrypted data: ", encryptedData);
-      let data = JSON.stringify({
-        EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
-      });
+      // let encryptedData = await encryptRequest(
+      //   `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get(
+      //     "PM_KISSAN_TOKEN"
+      //   )}\"}`
+      // );
+      let key = getUniqueKey();
+      let requestData = `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get("PM_KISSAN_TOKEN")}\"}`;
+      console.log("Request data: ", requestData);
+      let encrypted_text = await encrypt(requestData, key); //without @
+
+      console.log("encrypted text without @: ", encrypted_text);
+      // let data = JSON.stringify({
+      //   EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
+      // });
+      let data = {
+       "EncryptedRequest":`${encrypted_text}@${key}`
+      };
+      
+      console.log("(in sendOTP)the data in the data var is as: ", data);
 
       let config = {
         method: "post",
@@ -39,16 +49,19 @@ export class UserService {
         },
         data: data,
       };
-
       let response: any = await axios.request(config);
-      console.log("sendOTP", response.status);
+      this.logger.log("sendOTP", response.status);
       if (response.status >= 200 && response.status < 300) {
         response = await response.data;
         let decryptedData: any = await decryptRequest(
           response.d.output,
-          encryptedData.d.token
+          key
         );
-        response.d.output = JSON.parse(decryptedData.d.decryptedvalue);
+        const parsedData = JSON.parse(decryptedData); 
+        console.log("Response from decryptedData(sendOTP)",parsedData);// Convert JSON string to an object
+        // const values = parsedData.Values; // Access the Values property
+        // console.log("Values:", values);
+        response.d.output = parsedData;
         response["status"] =
           response.d.output.Rsponce != "False" ? "OK" : "NOT_OK";
         return response;
@@ -63,7 +76,7 @@ export class UserService {
         };
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error in sendOTP:", error.message, error.response?.data || error);
       return {
         d: {
           output: {
@@ -81,15 +94,33 @@ export class UserService {
     type: string = "Mobile"
   ): Promise<any> {
     try {
-      let encryptedData = await encryptRequest(
-        `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"OTP\":\"${otp}\",\"Token\":\"${this.configService.get(
-          "PM_KISSAN_TOKEN"
-        )}\"}`
-      );
-      let data = JSON.stringify({
-        EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
-      });
+      // let encryptedData = await encryptRequest(
+      //   `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"OTP\":\"${otp}\",\"Token\":\"${this.configService.get(
+      //     "PM_KISSAN_TOKEN"
+      //   )}\"}`
+      // );
+      // const requestData = `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get("PM_KISSAN_TOKEN")}\"}`;
+      let requestData = `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"OTP\":\"${otp}\",\"${this.configService.get("PM_KISSAN_TOKEN")}\"}`;
+      console.log("Request data: ", requestData);
+      let key = getUniqueKey();
+      // const requestData = JSON.stringify({
+      //   Types: type,
+      //   Values: mobileNumber,
+      //   Token: ""
+      // });
+      let encrypted_text = await encrypt(requestData, key); //without @
+      
 
+      console.log("encrypted text without @: ", encrypted_text);
+      
+      // let data = JSON.stringify({
+      //   EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
+      // });
+      let data = {
+        // EncryptedRequest: `${encryptedData}`
+        "EncryptedRequest": `${encrypted_text}@${key}`,
+      };
+      console.log("(inside verifyOTP)the data in the data var is : ", data);
       let config = {
         method: "post",
         maxBodyLength: Infinity,
@@ -103,15 +134,16 @@ export class UserService {
       };
 
       let response: any = await axios.request(config);
-      console.log("verifyOTP", response.status);
+      this.logger.log("verifyOTP", response.status);
       if (response.status >= 200 && response.status < 300) {
         response = await response.data;
         let decryptedData: any = await decryptRequest(
           response.d.output,
-          encryptedData.d.token
+          key
         );
-        console.log(decryptedData);
-        response.d.output = JSON.parse(decryptedData.d.decryptedvalue);
+        console.log("Response of VerifyOTP",response);
+        console.log("Response from decryptedData(verifyOTP)",decryptedData);
+        // response.d.output = JSON.parse(decryptedData);
         response["status"] =
           response.d.output.Rsponce != "False" ? "OK" : "NOT_OK";
         return response;
@@ -126,7 +158,7 @@ export class UserService {
         };
       }
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
       return {
         d: {
           output: {
@@ -144,14 +176,27 @@ export class UserService {
   ): Promise<any> {
     let res: any;
     try {
-      let encryptedData = await encryptRequest(
-        `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get(
-          "PM_KISSAN_TOKEN"
-        )}\"}`
-      );
-      let data = JSON.stringify({
-        EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
-      });
+      // let encryptedData = await encryptRequest(
+      //   `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get(
+      //     "PM_KISSAN_TOKEN"
+      //   )}\"}`
+      // );
+      const requestData = `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get("PM_KISSAN_TOKEN")}\"}`;
+      console.log("Request data: ", requestData);
+      let key = getUniqueKey();
+      // const requestData = JSON.stringify({
+      //   Types: type,
+      //   Values: mobileNumber,
+      //   Token: ""
+      // });
+      let encrypted_text = await encrypt(requestData, key); //without @
+      console.log("encrypted text without @: ", encrypted_text);
+      // let data = JSON.stringify({
+      //   EncryptedRequest: `${encryptedData.d.encryptedvalu}@${encryptedData.d.token}`,
+      // });
+      let data = {
+        "EncryptedRequest": `${encrypted_text}@${key}`,
+      };
 
       let config = {
         method: "post",
@@ -165,14 +210,16 @@ export class UserService {
         data: data,
       };
       res = await axios.request(config);
-      console.log("getUserData", res.status);
+      this.logger.log("getUserData", res.status);
       if (res.status >= 200 && res.status < 300) {
         res = await res.data;
         let decryptedData: any = await decryptRequest(
           res.d.output,
-          encryptedData.d.token
+          key
         );
-        res.d.output = JSON.parse(decryptedData.d.decryptedvalue);
+        console.log("Response of getUserData",res);
+        console.log("decrypted data(from getUserData): ", decryptedData);
+        res.d.output = JSON.parse(decryptedData);
         res["status"] = res.d.output.Rsponce != "False" ? "OK" : "NOT_OK";
       } else {
         this.monitoringService.incrementUnableToGetUserDetailsCount();

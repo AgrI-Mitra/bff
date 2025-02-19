@@ -185,9 +185,3 @@ export class MonitoringController {
   }
 
 }
-
-
-
-
-
-

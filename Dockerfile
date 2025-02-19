@@ -1,4 +1,4 @@
-FROM node:16 AS builder
+FROM node:18 AS builder
 
 # Create app directory
 WORKDIR /app
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json ./
 COPY yarn.lock ./
 COPY prisma ./prisma/
-
+COPY src  ./src/  
 # Install app dependencies
 RUN yarn install
 # Required if not done in postinstall
@@ -17,7 +17,7 @@ COPY . .
 
 RUN yarn run build
 
-FROM node:16
+FROM node:18
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/yarn.lock ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-
+COPY --from=builder /app/src ./src
 ARG ENV
 ENV CI_ENV=${ENV}
 

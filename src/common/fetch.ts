@@ -1,3 +1,11 @@
+const { Logger } = require('@nestjs/common');
+const { HttpService } = require('@nestjs/axios');
+const { ConfigService } = require('@nestjs/config');
+
+const logger = new Logger(
+  'fetch'
+);
+
 module.exports = async (url, opts) => {
     let retry = opts && opts.retry || 3
 
@@ -23,14 +31,13 @@ module.exports = async (url, opts) => {
             }
 
             if (opts && opts.pause) {
-                if (opts && !opts.silent) console.log("pausing..");
+                if (opts && !opts.silent) logger.log("pausing..");
                 await sleep(opts.pause);
-                if (opts && !opts.silent) console.log("done pausing...");
+                if (opts && !opts.silent) logger.log("done pausing...");
             }
         }
     }
 };
-
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
