@@ -140,7 +140,7 @@
         "types":["payment"]
     },
     "eKYC Not Done": {
-        "text":"Dear {{farmer_name}}, I have checked your status and found that your KYC in the Bank has not been completed. I suggest you to kindly visit your nearest bank branch along with your KYC documents and complete your KYCenable it for DBT. Then you can continue to avail the benefit under the PM KISAN scheme.",
+        "text":"Dear {{farmer_name}}, I have checked your status and found that your KYC in the Bank has not been completed. I suggest you to kindly visit your nearest bank branch along with your KYC documents and complete your KYC to enable it for DBT. Then you can continue to avail the benefit under the PM KISAN scheme.",
         "types":["payment"]
     },
     "Dormant Account": {
