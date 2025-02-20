@@ -18,10 +18,6 @@ import { HttpModule } from "@nestjs/axios";
 import { LoggerModule } from 'nestjs-pino';
 import { HealthModule } from "./modules/health/health.module";
 import { MetricsModule } from './metrics/metrics.module';
-import { QuestionsController } from "./biharkrishi/fetch-db-response/fetchdbresponse.controller";
-import { QuestionsService } from "./biharkrishi/fetch-db-response/fetchdbresponse.service";
-import { UploadModule } from './biharkrishi/upload/upload.module';
-
 
 @Module({
   imports: [
@@ -70,15 +66,13 @@ import { UploadModule } from './biharkrishi/upload/upload.module';
     CacheModule.register(),
     HealthModule,
     MetricsModule,
-    UploadModule,
   ],
-  controllers: [AppController, QuestionsController],
+  controllers: [AppController],
   providers: [
     AppService,
     PrismaService,
     ConfigService,
     ConversationService,
-    QuestionsService,
     MonitoringController,
     {
       provide: APP_PIPE,

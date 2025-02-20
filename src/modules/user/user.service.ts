@@ -143,7 +143,7 @@ export class UserService {
         );
         console.log("Response of VerifyOTP",response);
         console.log("Response from decryptedData(verifyOTP)",decryptedData);
-        // response.d.output = JSON.parse(decryptedData);
+        response.d.output = JSON.parse(decryptedData);
         response["status"] =
           response.d.output.Rsponce != "False" ? "OK" : "NOT_OK";
         return response;
