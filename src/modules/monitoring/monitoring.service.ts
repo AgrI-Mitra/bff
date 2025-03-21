@@ -1,11 +1,62 @@
 import { Injectable } from '@nestjs/common';
-import { Counter } from 'prom-client';
+import { Counter, Registry } from 'prom-client';
 import { PrismaService } from '../../global-services/prisma.service';
 import { CacheProvider } from '../cache/cache.provider';
-
+import { BiharKrishiMetrics } from '@prisma/client';
 @Injectable()
 export class MonitoringService {
-  constructor(private prismaService: PrismaService, private cache: CacheProvider) {}
+  // Initialize registry inline so it's available for field initializers
+  private readonly registry: Registry = new Registry();
+
+  constructor(private prismaService: PrismaService, private cache: CacheProvider) {
+    // No need to reinitialize the registry here
+  }
+
+  private getOrCreateCounter(name: string, help: string, labelNames: string[] = []): Counter<string> {
+    const existingMetric = this.registry.getSingleMetric(name);
+    
+    if (existingMetric) {
+      return existingMetric as Counter<string>;
+    }
+
+    const counter = new Counter({
+      name,
+      help,
+      labelNames,
+      registers: [this.registry]  // Important: Register the counter with our registry
+    });
+
+    return counter;
+  }
+
+  // Initialize counters in constructor
+  private biharKrishiQuestionsCounter = this.getOrCreateCounter(
+    'biharKrishiQuestionsCount',
+    'Total number of questions asked to Bihar Krishi API'
+  );
+
+  private biharKrishiSuccessCounter = this.getOrCreateCounter(
+    'biharKrishiSuccessCount',
+    'Total number of successful Bihar Krishi API responses'
+  );
+
+  private biharKrishiFailureCounter = this.getOrCreateCounter(
+    'biharKrishiFailureCount',
+    'Total number of failed Bihar Krishi API responses'
+  );
+
+  private biharKrishiSchemeCounter = this.getOrCreateCounter(
+    'bihar_krishi_scheme_total',
+    'Total number of questions per scheme',
+    ['scheme']
+  );
+
+  // Add the missing counter for API key usage
+  private biharKrishiApiKeyCounter = this.getOrCreateCounter(
+    'bihar_krishi_api_key_total',
+    'Total number of requests per API key',
+    ['api_key']
+  );
 
   async initializeAsync() {
     const metricsToUpsert: any = [
@@ -47,6 +98,9 @@ export class MonitoringService {
       { name: "stage3Count" },
       { name: "stage4Count" },
       { name: "stage5Count" },
+      { name: 'biharKrishiQuestionsCount' },
+      { name: 'biharKrishiSuccessCount' },
+      { name: 'biharKrishiFailureCount' },
     ];
     for (const metric of metricsToUpsert) {
       const existingMetric: any = await this.prismaService.metrics.findUnique({
@@ -168,6 +222,15 @@ export class MonitoringService {
           case "stage5Count":
             this.stage5Counter.inc(parseInt((await this.cache.get('stage5Count')) || '0'));
             break;
+          case 'biharKrishiQuestionsCount':
+            this.biharKrishiQuestionsCounter.inc();
+            break;
+          case 'biharKrishiSuccessCount':
+            this.biharKrishiSuccessCounter.inc();
+            break;
+          case 'biharKrishiFailureCount':
+            this.biharKrishiFailureCounter.inc();
+            break;
           default:
             break;
         }
@@ -175,193 +238,193 @@ export class MonitoringService {
     }
   }
 
-  private bhashiniCounter: Counter<string> = new Counter({
-    name: 'bhashini_api_count',
-    help: 'Counts the API requests in Bhashini service',
-  });
-  private bhashiniSuccessCounter: Counter<string> = new Counter({
-    name: 'bhashini_api_success_count',
-    help: 'Counts the successful API requests in Bhashini service',
-  });
-  private bhashiniFailureCounter: Counter<string> = new Counter({
-    name: 'bhashini_api_failure_count',
-    help: 'Counts the failed API requests in Bhashini service',
-  });
+  private bhashiniCounter: Counter<string> = this.getOrCreateCounter(
+    'bhashini_api_count',
+    'Count of bhashini API requests'
+  );
+  private bhashiniSuccessCounter: Counter<string> = this.getOrCreateCounter(
+    'bhashini_api_success_count',
+    'Counts the successful API requests in Bhashini service',
+  );
+  private bhashiniFailureCounter: Counter<string> = this.getOrCreateCounter(
+    'bhashini_api_failure_count',
+    'Counts the failed API requests in Bhashini service',
+  );
 
-  private totalSessionsCounter: Counter<string> = new Counter({
-    name: 'total_sessions_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSuccessfullSessionsCounter: Counter<string> = new Counter({
-    name: 'total_successfull_sessions_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSuccessfullSessionsCounter: Counter<string> = this.getOrCreateCounter(
+    'total_successfull_sessions_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalFailureSessionsCounter: Counter<string> = new Counter({
-    name: 'total_failure_sessionsCounter',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalFailureSessionsCounter: Counter<string> = this.getOrCreateCounter(
+    'total_failure_sessionsCounter',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalIncompleteSessionsCounter: Counter<string> = new Counter({
-    name: 'total_incomplete_sessions_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalIncompleteSessionsCounter: Counter<string> = this.getOrCreateCounter(
+    'total_incomplete_sessions_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSessionsInHindiCounter: Counter<string> = new Counter({
-    name: 'total_sessions_in_hindi_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsInHindiCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_in_hindi_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSessionsInTamilCounter: Counter<string> = new Counter({
-    name: 'total_sessions_in_tamil_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsInTamilCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_in_tamil_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSessionsInOdiaCounter: Counter<string> = new Counter({
-    name: 'total_sessions_in_odia_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsInOdiaCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_in_odia_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSessionsInTeluguCounter: Counter<string> = new Counter({
-    name: 'total_sessions_in_telugu_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsInTeluguCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_in_telugu_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSessionsInMarathiCounter: Counter<string> = new Counter({
-    name: 'total_sessions_in_marathi_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsInMarathiCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_in_marathi_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSessionsInBanglaCounter: Counter<string> = new Counter({
-    name: 'total_sessions_in_bangla_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsInBanglaCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_in_bangla_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private totalSessionsInEnglishCounter: Counter<string> = new Counter({
-    name: 'total_sessions_in_english_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private totalSessionsInEnglishCounter: Counter<string> = this.getOrCreateCounter(
+    'total_sessions_in_english_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private aadhaarCounter: Counter<string> = new Counter({
-    name: 'aadhaar_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private aadhaarCounter: Counter<string> = this.getOrCreateCounter(
+    'aadhaar_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private registrationIdCounter: Counter<string> = new Counter({
-    name: 'registration_id_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private registrationIdCounter: Counter<string> = this.getOrCreateCounter(
+    'registration_id_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private mobileNumberCounter: Counter<string> = new Counter({
-    name: 'mobile_number_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private mobileNumberCounter: Counter<string> = this.getOrCreateCounter(
+    'mobile_number_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private positveFeedbackCounter: Counter<string> = new Counter({
-    name: 'positve_feedback_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private positveFeedbackCounter: Counter<string> = this.getOrCreateCounter(
+    'positve_feedback_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private negativeFeedbackCounter: Counter<string> = new Counter({
-    name: 'negative_feedback_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private negativeFeedbackCounter: Counter<string> = this.getOrCreateCounter(
+    'negative_feedback_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private micUsedCounter: Counter<string> = new Counter({
-    name: 'mic_used_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private micUsedCounter: Counter<string> = this.getOrCreateCounter(
+    'mic_used_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private directMessageTypedCounter: Counter<string> = new Counter({
-    name: 'direct_message_typed_count',
-    help: 'Counts the API requests of /prompt API',
-  });
+  private directMessageTypedCounter: Counter<string> = this.getOrCreateCounter(
+    'direct_message_typed_count',
+    'Counts the API requests of /prompt API',
+  );
 
-  private sampleQueryUsedCounter: Counter<string> = new Counter({
-    name: 'sample_query_used_count',
-    help: 'Counts number of times user used sample query',
-  });
+  private sampleQueryUsedCounter: Counter<string> = this.getOrCreateCounter(
+    'sample_query_used_count',
+    'Counts number of times user used sample query',
+  );
 
-  private internalServerErrorCounter: Counter<string> = new Counter({
-    name: 'internal_server_error_count',
-    help: 'Counts the internal server errors',
-  });
+  private internalServerErrorCounter: Counter<string> = this.getOrCreateCounter(
+    'internal_server_error_count',
+    'Counts the internal server errors',
+  );
 
-  private badGatewayCounter: Counter<string> = new Counter({
-    name: 'bad_gateway_count',
-    help: 'Counts the bat gateway errors',
-  });
+  private badGatewayCounter: Counter<string> = this.getOrCreateCounter(
+    'bad_gateway_count',
+    'Counts the bat gateway errors',
+  );
 
-  private gatewayTimeoutCounter: Counter<string> = new Counter({
-    name: 'gateway_timeout_count',
-    help: 'gateway timeout count'
-  })
+  private gatewayTimeoutCounter: Counter<string> = this.getOrCreateCounter(
+    'gateway_timeout_count',
+    'gateway timeout count'
+  )
 
-  private somethingWentWrongCounter: Counter<string> = new Counter({
-    name: 'something_went_wrong_count',
-    help: 'something went wrong count'
-  })
+  private somethingWentWrongCounter: Counter<string> = this.getOrCreateCounter(
+    'something_went_wrong_count',
+    'something went wrong count'
+  )
 
-  private unsupportedMediaCounter: Counter<string> = new Counter({
-    name: 'unsupported_media_count',
-    help: 'unsupported media count'
-  })
+  private unsupportedMediaCounter: Counter<string> = this.getOrCreateCounter(
+    'unsupported_media_count',
+    'unsupported media count'
+  )
 
-  private unableToTranslateCounter: Counter<string> = new Counter({
-    name: 'unable_to_translate_count',
-    help: 'unable to translate count'
-  })
+  private unableToTranslateCounter: Counter<string> = this.getOrCreateCounter(
+    'unable_to_translate_count',
+    'unable to translate count'
+  )
 
-  private somethingWentWrongTryAgainCounter: Counter<string> = new Counter({
-    name: 'something_went_wrong_try_again_count',
-    help: 'something went wrong try again count'
-  })
+  private somethingWentWrongTryAgainCounter: Counter<string> = this.getOrCreateCounter(
+    'something_went_wrong_try_again_count',
+    'something went wrong try again count'
+  )
 
-  private unableToGetUserDetailsCounter: Counter<string> = new Counter({
-    name: 'unable_to_get_user_details_count',
-    help: 'unable to get user details count'
-  })
+  private unableToGetUserDetailsCounter: Counter<string> = this.getOrCreateCounter(
+    'unable_to_get_user_details_count',
+    'unable to get user details count'
+  )
 
-  private noUserRecordsFoundCounter: Counter<string> = new Counter({
-    name: 'no_user_records_found_count',
-    help: 'no user records found count'
-  })
+  private noUserRecordsFoundCounter: Counter<string> = this.getOrCreateCounter(
+    'no_user_records_found_count',
+    'no user records found count'
+  )
 
-  private untrainedQueryCounter: Counter<string> = new Counter({
-    name: 'untrained_query_count',
-    help: 'untrained query count'
-  })
+  private untrainedQueryCounter: Counter<string> = this.getOrCreateCounter(
+    'untrained_query_count',
+    'untrained query count'
+  )
 
-  private resentOTPCounter: Counter<string> = new Counter({
-    name: 'resent_otp_count',
-    help: 'resent otp count'
-  })
+  private resentOTPCounter: Counter<string> = this.getOrCreateCounter(
+    'resent_otp_count',
+    'resent otp count'
+  )
 
-  private stage1Counter: Counter<string> = new Counter({
-    name: 'stage_1_count',
-    help: 'Count of sessions which are at stage 1'
-  })
+  private stage1Counter: Counter<string> = this.getOrCreateCounter(
+    'stage_1_count',
+    'Count of sessions which are at stage 1'
+  )
 
-  private stage2Counter: Counter<string> = new Counter({
-    name: 'stage_2_count',
-    help: 'Count of sessions which are at stage 2'
-  })
+  private stage2Counter: Counter<string> = this.getOrCreateCounter(
+    'stage_2_count',
+    'Count of sessions which are at stage 2'
+  )
 
-  private stage3Counter: Counter<string> = new Counter({
-    name: 'stage_3_count',
-    help: 'Count of sessions which are at stage 3'
-  })
+  private stage3Counter: Counter<string> = this.getOrCreateCounter(
+    'stage_3_count',
+    'Count of sessions which are at stage 3'
+  )
 
-  private stage4Counter: Counter<string> = new Counter({
-    name: 'stage_4_count',
-    help: 'Count of sessions which are at stage 4'
-  })
+  private stage4Counter: Counter<string> = this.getOrCreateCounter(
+    'stage_4_count',
+    'Count of sessions which are at stage 4'
+  )
 
-  private stage5Counter: Counter<string> = new Counter({
-    name: 'stage_5_count',
-    help: 'Count of sessions which are at stage 5'
-  })
+  private stage5Counter: Counter<string> = this.getOrCreateCounter(
+    'stage_5_count',
+    'Count of sessions which are at stage 5'
+  )
 
   public async getBhashiniCount() {
     let count = await this.bhashiniCounter.get();
@@ -524,7 +587,7 @@ export class MonitoringService {
   }
 
   public async getResentOTPCount() {
-    let count = await this.untrainedQueryCounter.get();
+    let count = await this.resentOTPCounter.get();
     return count.values[0].value;
   }
 
@@ -742,6 +805,27 @@ export class MonitoringService {
     this.cache.increment('stage5Count');
   }
 
+  public incrementBiharKrishiQuestionsCount(): void {
+    this.biharKrishiQuestionsCounter.inc();
+  }
+
+  public incrementBiharKrishiSuccessCount(): void {
+    this.biharKrishiSuccessCounter.inc();
+  }
+
+  public incrementBiharKrishiFailureCount(): void {
+    this.biharKrishiFailureCounter.inc();
+  }
+
+  public incrementBiharKrishiSchemeCount(schemeName: string): void {
+    this.biharKrishiSchemeCounter.inc({ scheme: schemeName });
+  }
+
+  public incrementBiharKrishiApiKeyUsage(apiKey: string): void {
+    const maskedApiKey = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}` : 'unknown';
+    this.biharKrishiApiKeyCounter.inc({ api_key: maskedApiKey });
+  }
+
   public async onExit(): Promise<void> {
     const metricsToUpsert: any = [
       { name: 'bhashiniCount', value: `${await this.getBhashiniCount()}` },
@@ -782,6 +866,9 @@ export class MonitoringService {
       { name: "stage3Count", value: `${await this.getStage3Count()}` },
       { name: "stage4Count", value: `${await this.getStage4Count()}` },
       { name: "stage5Count", value: `${await this.getStage5Count()}` },
+      { name: 'biharKrishiQuestionsCount', value: `${await this.getBiharKrishiQuestionsCount()}` },
+      { name: 'biharKrishiSuccessCount', value: `${await this.getBiharKrishiSuccessCount()}` },
+      { name: 'biharKrishiFailureCount', value: `${await this.getBiharKrishiFailureCount()}` },
     ];
     const upsertedMetrics = [];
     try {
@@ -832,5 +919,71 @@ export class MonitoringService {
     } catch (err) {
       console.log(err)
     }
+  }
+
+  public async logBiharKrishiMetric(data: {
+    apiKey: string;
+    question: string;
+    schemeName: string;
+    status: 'SUCCESS' | 'FAILURE';
+  }): Promise<void> {
+    try {
+      const maskedApiKey = data.apiKey
+        ? `${data.apiKey.substring(0, 4)}...${data.apiKey.substring(data.apiKey.length - 4)}`
+        : 'unknown';
+
+      await this.prismaService.biharKrishiMetrics.create({
+        data: {
+          apiKey: maskedApiKey,
+          question: data.question,
+          schemeName: data.schemeName,
+          status: data.status,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to log Bihar Krishi metric:', error);
+    }
+  }
+
+  public async getBiharKrishiMetrics(filters?: {
+    startDate?: Date;
+    endDate?: Date;
+    schemeName?: string;
+    apiKey?: string;
+    status?: string;
+  }) {
+    const where: any = {};
+    if (filters?.startDate && filters?.endDate) {
+      where.createdAt = {
+        gte: filters.startDate,
+        lte: filters.endDate,
+      };
+    }
+    if (filters?.schemeName) {
+      where.schemeName = filters.schemeName;
+    }
+    if (filters?.apiKey) {
+      where.apiKey = filters.apiKey;
+    }
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    return await this.prismaService.biharKrishiMetrics.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  public async getBiharKrishiQuestionsCount(): Promise<number> {
+    return (await this.biharKrishiQuestionsCounter.get()).values[0].value;
+  }
+
+  public async getBiharKrishiSuccessCount(): Promise<number> {
+    return (await this.biharKrishiSuccessCounter.get()).values[0].value;
+  }
+
+  public async getBiharKrishiFailureCount(): Promise<number> {
+    return (await this.biharKrishiFailureCounter.get()).values[0].value;
   }
 }

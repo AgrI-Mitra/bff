@@ -5,11 +5,20 @@ import { PrismaService } from 'src/global-services/prisma.service';
 import { MonitoringController } from './monitoring.controller';
 import { CacheProvider } from '../cache/cache.provider';
 import { HttpModule } from '@nestjs/axios';
+import { Registry } from 'prom-client';
 
 @Global()
 @Module({
   imports: [HttpModule],
-  providers: [MonitoringService, PrismaService, CacheProvider],
+  providers: [
+    MonitoringService,
+    PrismaService,
+    CacheProvider,
+    {
+      provide: Registry,
+      useValue: new Registry(),
+    },
+  ],
   exports: [MonitoringService],
   controllers: [MonitoringController],
 })
@@ -33,3 +42,4 @@ export class MonitoringModule implements OnModuleInit {
     };
   }
 }
+

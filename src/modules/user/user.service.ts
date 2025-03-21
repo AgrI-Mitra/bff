@@ -100,7 +100,7 @@ export class UserService {
       //   )}\"}`
       // );
       // const requestData = `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"Token\":\"${this.configService.get("PM_KISSAN_TOKEN")}\"}`;
-      let requestData = `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"OTP\":\"${otp}\",\"${this.configService.get("PM_KISSAN_TOKEN")}\"}`;
+      let requestData = `{\"Types\":\"${type}\",\"Values\":\"${mobileNumber}\",\"OTP\":\"${otp}\",\"Token\":\"${this.configService.get("PM_KISSAN_TOKEN")}\"}`;
       console.log("Request data: ", requestData);
       let key = getUniqueKey();
       // const requestData = JSON.stringify({
