@@ -1,46 +1,38 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../user/user.service';
+import { ConversationService } from './conversation.service';
 import { PrismaService } from '../../global-services/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { MonitoringService } from '../monitoring/monitoring.service';
-import axios from 'axios';
-import { Logger } from '@nestjs/common';
-import * as utils from '../../common/utils';
 
-// Load environment variables
-require('dotenv').config();
-
-jest.mock('axios');
-jest.mock('../../common/utils');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
-
-describe('UserService', () => {
-  let service: UserService;
+describe('ConversationService', () => {
+  let service: ConversationService;
+  let prismaService: PrismaService;
   let configService: ConfigService;
-  let monitoringService: MonitoringService;
 
   const mockPrismaService = {
-    $queryRawUnsafe: jest.fn(),
+    conversation: {
+      upsert: jest.fn(),
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
+    feedback: {
+      upsert: jest.fn(),
+    },
   };
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
-      console.log(`Getting config for key: ${key}`);
-      return process.env[key];
+      const config = {
+        'DATABASE_URL': process.env.DATABASE_URL
+      };
+      return config[key];
     }),
   };
 
-  const mockMonitoringService = {
-    incrementPositveFeedbackCount: jest.fn(),
-    incrementNegativeFeedbackCount: jest.fn(),
-    incrementUnableToGetUserDetailsCount: jest.fn(),
-  };
-
   beforeEach(async () => {
-    console.log('Setting up test module...');
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserService,
+        ConversationService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -49,179 +41,219 @@ describe('UserService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
-        {
-          provide: MonitoringService,
-          useValue: mockMonitoringService,
-        },
       ],
     }).compile();
 
-    service = module.get<UserService>(UserService);
+    service = module.get<ConversationService>(ConversationService);
+    prismaService = module.get<PrismaService>(PrismaService);
     configService = module.get<ConfigService>(ConfigService);
-    monitoringService = module.get<MonitoringService>(MonitoringService);
-
-    // Mock the utility functions
-    console.log('Setting up utility mocks...');
-    (utils.getUniqueKey as jest.Mock).mockReturnValue('TESTKEY123456789');
-    (utils.encrypt as jest.Mock).mockResolvedValue('encrypted_data');
-    console.log('Test setup complete');
   });
 
   afterEach(() => {
-    console.log('Clearing mocks...');
     jest.clearAllMocks();
   });
 
-  it('should use environment variables', () => {
-    // Check all environment variables used in UserService
-    const databaseUrl = process.env.DATABASE_URL;
-    const environment = process.env.ENVIRONMENT;
-    const pmKisanBaseUrl = process.env.PM_KISAN_BASE_URL;
-    const pmKisanEncDecApi = process.env.PM_KISAN_ENC_DEC_API;
-    const pmKissanToken = process.env.PM_KISSAN_TOKEN;
-    
-    expect(databaseUrl).toBeDefined();
-    expect(environment).toBeDefined();
-    expect(pmKisanBaseUrl).toBeDefined();
-    expect(pmKisanEncDecApi).toBeDefined();
-    expect(pmKissanToken).toBeDefined();
+  it('should be defined', () => {
+    expect(service).toBeDefined();
   });
 
-  describe('sendOTP', () => {
-    it('should successfully send OTP', async () => {
-      const mobileNumber = '1234567890';
-      
-      const mockResponse = {
-        status: 200,
-        data: {
-          d: {
-            output: '{"Rsponce":"True","Message":"OTP sent successfully"}'
-          }
-        }
+  describe('saveConversation', () => {
+    it('should save a conversation successfully', async () => {
+      const mockConversation = {
+        id: 'test-session-id',
+        userId: 'test-user-id',
+        context: {
+          currentState: 'WELCOME',
+          language: 'hi',
+          previousState: null,
+          data: {}
+        },
+        state: 'onGoing',
+        flowId: 'pm-kisan-flow'
       };
-      
-      mockedAxios.request.mockResolvedValueOnce(mockResponse);
-      (utils.decryptRequest as jest.Mock).mockResolvedValue('{"Rsponce":"True","Message":"OTP sent successfully"}');
 
-      const result = await service.sendOTP(mobileNumber);
+      mockPrismaService.conversation.upsert.mockResolvedValue(mockConversation);
 
-      expect(utils.getUniqueKey).toHaveBeenCalled();
-      expect(utils.encrypt).toHaveBeenCalledWith(
-        expect.stringContaining(`"Token":"${process.env.PM_KISSAN_TOKEN}"`),
-        'TESTKEY123456789'
+      const result = await service.saveConversation(
+        'test-session-id',
+        'test-user-id',
+        {
+          currentState: 'WELCOME',
+          language: 'hi',
+          previousState: null,
+          data: {}
+        },
+        'onGoing',
+        'pm-kisan-flow'
       );
-      expect(mockedAxios.request).toHaveBeenCalledWith(expect.objectContaining({
-        method: 'post',
-        url: `${process.env.PM_KISAN_BASE_URL}/chatbototp`,
-        data: {
-          EncryptedRequest: 'encrypted_data@TESTKEY123456789'
-        }
-      }));
-      expect(result.status).toBe('OK');
-      expect(result.d.output.Message).toBe('OTP sent successfully');
-    });
 
-    it('should handle API error response', async () => {
-      const mobileNumber = '1234567890';
-      
-      mockedAxios.request.mockRejectedValueOnce(new Error('API Error'));
-
-      const result = await service.sendOTP(mobileNumber);
-
-      expect(result.d.output.status).toBe('False');
-      expect(result.d.output.Message).toBe('Try again');
-    });
-  });
-
-  describe('getUserData', () => {
-    it('should successfully get user data', async () => {
-      const mobileNumber = '1234567890';
-      
-      const mockUserData = {
-        Rsponce: "True",
-        UserDetails: {
-          name: "John Doe",
-          mobile: "1234567890",
-          address: "Test Address"
-        }
-      };
-
-      const mockResponse = {
-        status: 200,
-        data: {
-          d: {
-            output: JSON.stringify(mockUserData)
+      expect(result).toEqual(mockConversation);
+      expect(mockPrismaService.conversation.upsert).toHaveBeenCalledWith({
+        where: { id: 'test-session-id' },
+        create: {
+          id: 'test-session-id',
+          userId: 'test-user-id',
+          context: {
+            currentState: 'WELCOME',
+            language: 'hi',
+            previousState: null,
+            data: {}
+          },
+          state: 'onGoing',
+          flowId: 'pm-kisan-flow'
+        },
+        update: {
+          state: 'onGoing',
+          context: {
+            currentState: 'WELCOME',
+            language: 'hi',
+            previousState: null,
+            data: {}
           }
-        }
-      };
-      
-      mockedAxios.request.mockResolvedValueOnce(mockResponse);
-      (utils.decryptRequest as jest.Mock).mockResolvedValue(JSON.stringify(mockUserData));
-
-      const result = await service.getUserData(mobileNumber);
-
-      expect(utils.getUniqueKey).toHaveBeenCalled();
-      expect(utils.encrypt).toHaveBeenCalledWith(
-        expect.stringContaining(`"Token":"${process.env.PM_KISSAN_TOKEN}"`),
-        'TESTKEY123456789'
-      );
-      expect(mockedAxios.request).toHaveBeenCalledWith(expect.objectContaining({
-        method: 'post',
-        url: `${process.env.PM_KISAN_BASE_URL}/ChatbotUserDetails`,
-        data: {
-          EncryptedRequest: 'encrypted_data@TESTKEY123456789'
-        }
-      }));
-      expect(result.status).toBe('OK');
-      expect(result.d.output.UserDetails).toEqual(mockUserData.UserDetails);
+        },
+      });
     });
   });
 
-  describe('Message Reactions', () => {
-    it('should like a message', async () => {
-      const mockMessage = { id: '123', reaction: 1 };
+  describe('getConversationState', () => {
+    it('should create new conversation if none exists', async () => {
+      const defaultContext = {
+        currentState: 'WELCOME',
+        language: 'hi',
+        previousState: null,
+        data: {}
+      };
 
-      mockPrismaService.$queryRawUnsafe
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([mockMessage]);
+      const mockConversation = {
+        id: 'test-session-id',
+        userId: 'test-user-id',
+        context: defaultContext,
+        state: 'onGoing',
+        flowId: 'pm-kisan-flow'
+      };
 
-      const result = await service.likeQuery('123');
+      mockPrismaService.conversation.findFirst.mockResolvedValue(null);
+      mockPrismaService.conversation.create.mockResolvedValue(mockConversation);
 
-      expect(monitoringService.incrementPositveFeedbackCount).toHaveBeenCalled();
-      expect(result[0]).toEqual(mockMessage);
+      const result = await service.getConversationState(
+        'test-session-id',
+        'test-user-id',
+        defaultContext,
+        'pm-kisan-flow'
+      );
+
+      expect(result).toEqual({ ...defaultContext, id: 'test-session-id' });
+      expect(mockPrismaService.conversation.create).toHaveBeenCalledWith({
+        data: {
+          id: 'test-session-id',
+          userId: 'test-user-id',
+          context: defaultContext,
+          flowId: 'pm-kisan-flow',
+          state: 'onGoing'
+        },
+      });
     });
 
-    it('should dislike a message', async () => {
-      const mockMessage = { id: '123', reaction: -1 };
+    it('should reset conversation if state is Done', async () => {
+      const defaultContext = {
+        currentState: 'WELCOME',
+        language: 'hi',
+        previousState: null,
+        data: {}
+      };
 
-      mockPrismaService.$queryRawUnsafe
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([mockMessage]);
+      const mockDoneConversation = {
+        id: 'test-session-id',
+        userId: 'test-user-id',
+        context: {
+          currentState: 'DONE',
+          language: 'hi',
+          data: { someOldData: true }
+        },
+        state: 'Done',
+        flowId: 'pm-kisan-flow'
+      };
 
-      const result = await service.dislikeQuery('123');
+      const mockUpdatedConversation = {
+        id: 'test-session-id',
+        userId: 'test-user-id',
+        context: defaultContext,
+        state: 'onGoing',
+        flowId: 'pm-kisan-flow'
+      };
 
-      expect(monitoringService.incrementNegativeFeedbackCount).toHaveBeenCalled();
-      expect(result[0]).toEqual(mockMessage);
+      mockPrismaService.conversation.findFirst
+        .mockResolvedValueOnce(mockDoneConversation)
+        .mockResolvedValueOnce(mockUpdatedConversation);
+      mockPrismaService.conversation.update.mockResolvedValue(mockUpdatedConversation);
+
+      const result = await service.getConversationState(
+        'test-session-id',
+        'test-user-id',
+        defaultContext,
+        'pm-kisan-flow'
+      );
+
+      expect(result).toEqual({ ...defaultContext, id: 'test-session-id' });
+    });
+  });
+
+  describe('getConversationById', () => {
+    it('should return conversation when found', async () => {
+      const mockConversation = {
+        id: 'test-session-id',
+        userId: 'test-user-id',
+        context: {
+          currentState: 'WELCOME',
+          language: 'hi',
+          previousState: null,
+          data: {}
+        },
+        state: 'onGoing',
+        flowId: 'pm-kisan-flow'
+      };
+
+      mockPrismaService.conversation.findFirst.mockResolvedValue(mockConversation);
+
+      const result = await service.getConversationById('test-session-id');
+
+      expect(result).toEqual(mockConversation);
     });
 
-    it('should remove reaction from a message', async () => {
-      const mockMessage = { id: '123', reaction: 0 };
+    it('should return null when conversation not found', async () => {
+      mockPrismaService.conversation.findFirst.mockResolvedValue(null);
 
-      mockPrismaService.$queryRawUnsafe
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([mockMessage]);
-
-      const result = await service.removeReactionOnQuery('123');
-
-      expect(result[0]).toEqual(mockMessage);
-    });
-
-    it('should handle database error when removing reaction', async () => {
-      mockPrismaService.$queryRawUnsafe.mockRejectedValueOnce(new Error('Database error'));
-
-      const result = await service.removeReactionOnQuery('123');
+      const result = await service.getConversationById('test-session-id');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('createOrUpdateFeedback', () => {
+    it('should create or update feedback successfully', async () => {
+      const mockFeedback = {
+        conversationId: 'test-session-id',
+        translation: 4,
+        information: 5,
+        chatbotFunctionality: 3,
+        feedback: 'Great service for PM Kisan!'
+      };
+
+      mockPrismaService.feedback.upsert.mockResolvedValue(mockFeedback);
+
+      const result = await service.createOrUpdateFeedback(mockFeedback);
+
+      expect(result).toEqual(mockFeedback);
+      expect(mockPrismaService.feedback.upsert).toHaveBeenCalledWith({
+        where: { conversationId: 'test-session-id' },
+        create: mockFeedback,
+        update: {
+          translation: 4,
+          information: 5,
+          chatbotFunctionality: 3,
+          feedback: 'Great service for PM Kisan!'
+        },
+      });
     });
   });
 }); 

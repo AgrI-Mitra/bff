@@ -39,7 +39,7 @@ export class HealthController {
   private async doPing() {
     try {
       const port = this.configService.get('PORT') || 3000;
-      const baseUrl = `http://localhost:${port}`;
+      const baseUrl = `http://0.0.0.0:${port}`;
       
       this.logger.log('Checking service health at:', baseUrl);
       

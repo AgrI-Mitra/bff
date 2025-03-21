@@ -244,13 +244,16 @@ export class PromptServices {
       );
       errors = JSON.parse(decryptedData);
       if (errors.Rsponce == "True") {
+        const queryType = typeof context.queryType === 'object' 
+          ? context.queryType.class 
+          : context.queryType;
         Object.entries(errors).forEach(([key, value]) => {
           if (key != "Rsponce" && key != "Message") {
             if (
               value &&
               PMKissanProtalErrors[`${value}`] &&
               PMKissanProtalErrors[`${value}`]["types"].indexOf(
-                context.queryType
+                queryType
               ) != -1
             ) {
               this.logger.log(`ERRORVALUE: ${key} ${value}`);

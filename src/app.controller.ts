@@ -204,7 +204,7 @@ export class AppController {
     if (promptDto.text) {
       type = "Text";
       let detectLanguageStartTime = Date.now();
-      if (/^\d+$/.test(userInput)) {
+      if (/^[A-Za-z0-9\s.,!?@#$%^&*()_+-=;:'"\[\]{}|<>\/\\]+$/.test(userInput)) {
         prompt.inputLanguage = Language.en;
       } else {
         // this.logger.log("IN ELSE....")

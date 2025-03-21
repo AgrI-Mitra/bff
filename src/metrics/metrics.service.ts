@@ -73,10 +73,10 @@ export class MetricsService implements OnModuleInit {
     // Initial update
     await updateMetrics();
 
-    // Update every minute
+    //update after every 3 hours
     setInterval(async () => {
       await updateMetrics();
-    }, 600000);
+    }, 10800000); //3 hours
   }
 
   async getMetrics(): Promise<string> {

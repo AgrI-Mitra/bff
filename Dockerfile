@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json ./
 COPY yarn.lock ./
 COPY prisma ./prisma/
-
+COPY src  ./src/  
 # Install app dependencies
 RUN yarn install
 # Required if not done in postinstall
@@ -26,7 +26,7 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/yarn.lock ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-
+COPY --from=builder /app/src ./src
 ARG ENV
 ENV CI_ENV=${ENV}
 

@@ -2,7 +2,7 @@ import { Injectable, CACHE_MANAGER, Inject, Logger } from "@nestjs/common";
 import { Cache } from "cache-manager";
 import { ConfigService } from "@nestjs/config";
 import { Language } from "../../language";
-import { isMostlyEnglish } from '../../common/utils';
+import { isMostlyEnglish } from "../../common/utils";
 import { MonitoringService } from "../monitoring/monitoring.service";
 import { HttpService } from '@nestjs/axios';
 const fetch = require("../../common/fetch");

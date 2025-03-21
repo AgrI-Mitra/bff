@@ -139,7 +139,7 @@
         "text":"Dear {{farmer_name}}, I have checked your status and found that you have not received your payment due to an unfortunate circumstance of a *Death* status has been marked  by the state. If it is not correct, I suggest you to complete your e-KYC to revoke this status to continue to avail the benefit of the scheme if you are otherwise eligible.",
         "types":["payment"]
     },
-    "KYC Documents Pending": {
+    "eKYC Not Done": {
         "text":"Dear {{farmer_name}}, I have checked your status and found that your KYC in the Bank has not been completed. I suggest you to kindly visit your nearest bank branch along with your KYC documents and complete your KYCenable it for DBT. Then you can continue to avail the benefit under the PM KISAN scheme.",
         "types":["payment"]
     },
