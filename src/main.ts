@@ -14,6 +14,8 @@ import { MonitoringService } from "./modules/monitoring/monitoring.service";
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { Logger as NestLogger } from '@nestjs/common';
+import { AppClusterService } from './app-cluster.service';
+
 
 async function bootstrap() {
   process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'
@@ -89,4 +91,6 @@ async function bootstrap() {
   await app.listen(3000, "0.0.0.0");
 }
 
-bootstrap();
+
+
+AppClusterService.clusterize(bootstrap);
