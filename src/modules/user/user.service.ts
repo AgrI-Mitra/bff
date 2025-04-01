@@ -289,4 +289,15 @@ export class UserService {
       SELECT * from "Message" where id = '${id}'
     `);
   }
+  async validatePhoneNumber(mobileNumber: string): Promise<boolean> {
+    try {
+      // Basic phone number validation regex for Indian numbers
+      const phoneRegex = /^[6-9]\d{9}$/;
+      return phoneRegex.test(mobileNumber);
+    } catch (error) {
+      this.logger.error(`Phone validation failed for ${mobileNumber}:`, error);
+      return false;
+    }
+  }
 }
+
