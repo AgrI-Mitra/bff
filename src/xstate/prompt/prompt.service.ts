@@ -52,7 +52,7 @@ export class PromptServices {
     this.logger.log("IN questionclassifier");
     try {
         let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId, context.query, context.schemeName)
-        console.log("response is :", response)
+        this.logger.log("response is :", response)
         if (response.error) throw new Error(`${response.error}, please try again.`)
         let intent;
         
@@ -71,7 +71,7 @@ export class PromptServices {
             intent = "invalid"
         }
         
-        console.log("intent is:", intent);
+        this.logger.log("intent is:", intent);
         return {
             class: intent,
             response: response.response
@@ -265,16 +265,15 @@ export class PromptServices {
       let config = {
         method: "post",
         maxBodyLength: Infinity,
-        // url: `${this.configService.get(
-        //   "PM_KISAN_BASE_URL"
-        // )}/ChatbotBeneficiaryStatus`,
-        url: "https://pmkisanstaging.amnex.co.in/pmkisanstaging/ChatbotserviceStaging.asmx/ChatbotBeneficiaryStatus",
+        url: `${this.configService.get(
+          "PM_KISAN_BASE_URL"
+        )}/ChatbotBeneficiaryStatus`,
         headers: {
           "Content-Type": "application/json",
         },
         data: data,
       };
-      console.log("In fetchUserData: ", config);
+      this.logger.log("In fetchUserData:",config)
       let errors: any = await axios.request(config);
       errors = await errors.data;
       this.logger.log("related issues", errors);
@@ -317,7 +316,7 @@ export class PromptServices {
         "NPCI_Seeding_Status": "NPCI Seeded",
         "eKYC_Status": "Done"
     };
-      console.log("Response from FetchUserdata: ", errors);
+      this.logger.log("Response from FetchUserdata: ", errors);
       if (errors.Rsponce == "True") {
         const queryType = typeof context.queryType === 'object' 
           ? context.queryType.class 

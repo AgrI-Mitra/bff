@@ -74,12 +74,12 @@ export class SoilhealthcardService {
   private async generateAccessToken(): Promise<string> {
     try {
       if (this.accessToken) {
-        console.log('Using cached token:', this.accessToken);
+        this.logger.log('Using cached token:', this.accessToken);
         return this.accessToken;
       }
 
       const refreshToken = this.refreshToken || this.configService.get('SOIL_HEALTH_TOKEN');
-      console.log('Using refresh token:', refreshToken);
+      this.logger.log('Using refresh token:', refreshToken);
       
       const requestBody = {
         query: `query Query($refreshToken: String!) {
@@ -102,7 +102,7 @@ export class SoilhealthcardService {
 
       const tokenResponse = response.data?.data?.generateAccessToken;
       if (!tokenResponse?.token) {
-        console.error('Invalid token response structure:', JSON.stringify(response.data, null, 2));
+        this.logger.error('Invalid token response structure:', JSON.stringify(response.data, null, 2));
         throw new Error('Invalid response structure from token generation');
       }
 
@@ -112,7 +112,7 @@ export class SoilhealthcardService {
       return this.accessToken; // Return just the token string
 
     } catch (error) {
-      console.error('Token generation error:', {
+      this.logger.error('Token generation error:', {
         message: error.message,
         response: error.response?.data,
         errors: error.response?.data?.errors
@@ -128,7 +128,7 @@ export class SoilhealthcardService {
       const token = await this.generateAccessToken();
       
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-      console.log('Making request for phone:', formattedPhone);
+      this.logger.log('Making request for phone:', formattedPhone);
 
       const requestBody = {
         query: `query GetTestForAuthUser($phone: PhoneNumber!, $state: String!, $district: String!, $cycle: String!, $scheme: String!) {
@@ -178,7 +178,7 @@ export class SoilhealthcardService {
         }
       };
 
-      console.log('Soil health request:', {
+      this.logger.log('Soil health request:', {
         url: this.configService.get('SOIL_HEALTH_BASE_URL'),
         headers: {
           'Authorization': `Bearer ${token}`
