@@ -24,6 +24,7 @@ import { ConversationService } from "./modules/conversation/conversation.service
 import { PrismaService } from "./global-services/prisma.service";
 import { MonitoringService } from "./modules/monitoring/monitoring.service";
 import { PromptServices } from "./xstate/prompt/prompt.service";
+import { SoilhealthcardService } from "src/modules/soilhealthcard/soilhealthcard.service";
 import { Cache } from "cache-manager";
 import { HttpService } from '@nestjs/axios';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
@@ -74,6 +75,7 @@ export class AppController {
   private conversationService: ConversationService;
   private prismaService: PrismaService;
   private promptService: PromptServices;
+  private soilHealthCardService: SoilhealthcardService;
   private logger: Logger;
 
   constructor(
@@ -84,6 +86,10 @@ export class AppController {
   ) {
     this.prismaService = new PrismaService();
     this.configService = new ConfigService();
+    this.soilHealthCardService = new SoilhealthcardService(
+      this.configService,
+      this.httpService,
+    );
     this.aiToolsService = new AiToolsService(
       this.configService,
       this.monitoringService,
@@ -98,7 +104,8 @@ export class AppController {
       this.prismaService,
       this.configService,
       this.aiToolsService,
-      this.monitoringService
+      this.monitoringService,
+      this.soilHealthCardService,
     );
     this.logger = new Logger(AppService.name);
   }
