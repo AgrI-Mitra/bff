@@ -7,7 +7,7 @@ import {
   Param,
   CACHE_MANAGER,
   Inject,
-  Logger
+  Logger,
 } from "@nestjs/common";
 import { AppService, Prompt } from "./app.service";
 import { IsNotEmpty, IsUUID, IsOptional } from "class-validator";
@@ -26,8 +26,15 @@ import { MonitoringService } from "./modules/monitoring/monitoring.service";
 import { PromptServices } from "./xstate/prompt/prompt.service";
 import { SoilhealthcardService } from "src/modules/soilhealthcard/soilhealthcard.service";
 import { Cache } from "cache-manager";
-import { HttpService } from '@nestjs/axios';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader } from '@nestjs/swagger';
+import { HttpService } from "@nestjs/axios";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiHeader,
+} from "@nestjs/swagger";
 const uuid = require("uuid");
 const path = require("path");
 const filePath = path.resolve(__dirname, "./common/en.json");
@@ -67,7 +74,7 @@ export class PromptDto {
   identifier?: string;
 }
 
-@ApiTags('App')
+@ApiTags("App")
 @Controller()
 export class AppController {
   private configService: ConfigService;
@@ -88,7 +95,7 @@ export class AppController {
     this.configService = new ConfigService();
     this.soilHealthCardService = new SoilhealthcardService(
       this.configService,
-      this.httpService,
+      this.httpService
     );
     this.aiToolsService = new AiToolsService(
       this.configService,
@@ -105,25 +112,28 @@ export class AppController {
       this.configService,
       this.aiToolsService,
       this.monitoringService,
-      this.soilHealthCardService,
+      this.soilHealthCardService
     );
     this.logger = new Logger(AppService.name);
   }
 
-  @ApiOperation({ summary: 'Get hello message' })
-  @ApiResponse({ status: 200, description: 'Returns hello message' })
+  @ApiOperation({ summary: "Get hello message" })
+  @ApiResponse({ status: 200, description: "Returns hello message" })
   @Get("/")
   getHello(): string {
     return this.appService.getHello();
   }
 
-  @ApiOperation({ summary: 'Process user prompt' })
-  @ApiParam({ name: 'configid', description: 'Configuration ID' })
+  @ApiOperation({ summary: "Process user prompt" })
+  @ApiParam({ name: "configid", description: "Configuration ID" })
   @ApiBody({ type: PromptDto })
-  @ApiHeader({ name: 'user-id', description: 'User ID' })
-  @ApiHeader({ name: 'session-id', description: 'Session ID' })
-  @ApiResponse({ status: 200, description: 'Returns processed prompt response' })
-  @ApiResponse({ status: 400, description: 'Missing required headers' })
+  @ApiHeader({ name: "user-id", description: "User ID" })
+  @ApiHeader({ name: "session-id", description: "Session ID" })
+  @ApiResponse({
+    status: 200,
+    description: "Returns processed prompt response",
+  })
+  @ApiResponse({ status: 400, description: "Missing required headers" })
   @Post("/prompt/:configid")
   async prompt(
     @Body() promptDto: any,
@@ -204,22 +214,27 @@ export class AppController {
       userId,
       defaultContext,
       configid
-    )
-    
+    );
+
     // this.logger.log("fetched conversation: ", conversation)
     //handle text and audio
     if (promptDto.text) {
       type = "Text";
       let detectLanguageStartTime = Date.now();
-      if (/^[A-Za-z0-9\s.,!?@#$%^&*()_+-=;:'"\[\]{}|<>\/\\]+$/.test(userInput)) {
+      if (
+        /^[A-Za-z0-9\s.,!?@#$%^&*()_+-=;:'"\[\]{}|<>\/\\]+$/.test(userInput)
+      ) {
         prompt.inputLanguage = Language.en;
       } else {
         // this.logger.log("IN ELSE....")
         try {
-          let response = await this.aiToolsService.detectLanguage(userInput, userId, sessionId)
-          prompt.inputLanguage = response["language"] as Language 
-        } catch (error) {
-        }
+          let response = await this.aiToolsService.detectLanguage(
+            userInput,
+            userId,
+            sessionId
+          );
+          prompt.inputLanguage = response["language"] as Language;
+        } catch (error) {}
         // this.logger.log("LANGUAGE DETECTED...")
         //@ts-ignore
         if (prompt.inputLanguage == "unk") {
@@ -232,10 +247,29 @@ export class AppController {
         type = "Audio";
         prompt.inputLanguage = promptDto.inputLanguage as Language;
         let response;
-        if(['askingAadhaarNumber','askingOTP','askLastAaadhaarDigits','confirmInput2','confirmInput3','confirmInput4'].indexOf(conversation?.currentState) != -1) 
-          response = await this.aiToolsService.speechToText(promptDto.media.text,Language.en,userId,sessionId)
+        if (
+          [
+            "askingAadhaarNumber",
+            "askingOTP",
+            "askLastAaadhaarDigits",
+            "confirmInput2",
+            "confirmInput3",
+            "confirmInput4",
+          ].indexOf(conversation?.currentState) != -1
+        )
+          response = await this.aiToolsService.speechToText(
+            promptDto.media.text,
+            Language.en,
+            userId,
+            sessionId
+          );
         else
-          response = await this.aiToolsService.speechToText(promptDto.media.text,prompt.inputLanguage,userId,sessionId)
+          response = await this.aiToolsService.speechToText(
+            promptDto.media.text,
+            prompt.inputLanguage,
+            userId,
+            sessionId
+          );
 
         if (response.error) {
           this.logger.error(response.error);
@@ -296,11 +330,11 @@ export class AppController {
           audio: null,
           type: "User",
           userId,
-          flowId: configid || '3',
-          messageType
-        }
-      })
-    }else {
+          flowId: configid || "3",
+          messageType,
+        },
+      });
+    } else {
       // this.logger.log("creating a new message in Message table...")
       await this.prismaService.message.create({
         data: {
@@ -325,10 +359,16 @@ export class AppController {
       let res = {
         text: userInput,
         textInEnglish: "",
-        error: null
-      }
-      res['audio'] = await this.aiToolsService.textToSpeech(res.text,prompt.inputLanguage,promptDto.audioGender,userId,sessionId)
-      if(res['audio']['error']){
+        error: null,
+      };
+      res["audio"] = await this.aiToolsService.textToSpeech(
+        res.text,
+        prompt.inputLanguage,
+        promptDto.audioGender,
+        userId,
+        sessionId
+      );
+      if (res["audio"]["error"]) {
       }
       res["messageId"] = uuid.v4();
       res["conversationId"] = conversation?.id;
@@ -348,8 +388,8 @@ export class AppController {
             userInput,
             userId,
             sessionId
-          )
-          if(!response['text']) {
+          );
+          if (!response["text"]) {
             this.logger.error(
               "Sorry, We are unable to translate given input, please try again"
             );
@@ -401,11 +441,12 @@ export class AppController {
           isOTP ? "otp" : "benId"
         );
         if (
-          ((/^[6-9]\d{9}$/.test(number)) || 
-          (number.length == 14 && /^[6-9]\d{9}$/.test(number.substring(0, 10))) || 
-          (number.length == 12 && /^\d+$/.test(number))  ||
-          (number.length == 11)) || 
-          (isOTP && number.length==4)
+          /^[6-9]\d{9}$/.test(number) ||
+          (number.length == 14 &&
+            /^[6-9]\d{9}$/.test(number.substring(0, 10))) ||
+          (number.length == 12 && /^\d+$/.test(number)) ||
+          number.length == 11 ||
+          (isOTP && number.length == 4)
         ) {
           prompt.inputTextInEnglish = number.toUpperCase();
           if (prompt.inputTextInEnglish == "")
@@ -490,8 +531,8 @@ export class AppController {
             result.text,
             userId,
             sessionId
-          )
-          if(!response['text']){
+          );
+          if (!response["text"]) {
             this.logger.error(
               "Sorry, We are unable to translate given input, please try again"
             );
@@ -520,8 +561,8 @@ export class AppController {
             placeholder,
             userId,
             sessionId
-          )
-          if(!response['text']){
+          );
+          if (!response["text"]) {
             this.logger.error(
               "Sorry, We are unable to translate given input, please try again"
             );
@@ -578,6 +619,13 @@ export class AppController {
             botFlowService.state.context.queryType == "convo"
               ? "convo_response"
               : "final_response";
+
+          if (
+            messageType === "final_response" &&
+            botFlowService.state.context.response.type === "soil_health_card"
+          ) {
+            result.text = result.textInEnglish;
+          }
           if (botFlowService.state.context.isWadhwaniResponse == "false") {
             let resArray = result.text.split("\n");
             let compareText = result.textInEnglish.split("\n");
@@ -592,8 +640,14 @@ export class AppController {
           }
         }
         let audioStartTime = Date.now();
-        textToaudio = removeLinks(textToaudio)
-        result['audio'] = await this.aiToolsService.textToSpeech(textToaudio,isNumber ? Language.en : prompt.inputLanguage,promptDto.audioGender,userId,sessionId)
+        textToaudio = removeLinks(textToaudio);
+        result["audio"] = await this.aiToolsService.textToSpeech(
+          textToaudio,
+          isNumber ? Language.en : prompt.inputLanguage,
+          promptDto.audioGender,
+          userId,
+          sessionId
+        );
       } catch (error) {
         result["audio"] = { text: "", error: error.message };
       }
@@ -608,7 +662,17 @@ export class AppController {
 
     let msg = await this.prismaService.message.create({
       data: {
-        text: result?.text ? result?.text : result.error ? result.error : null,
+        text:
+          typeof result?.text === "object"
+            ? JSON.stringify(result.text) // Convert JSON to string
+            : result?.text
+            ? result.text // Store string as is
+            : result?.error
+            ? typeof result.error === "object"
+              ? JSON.stringify(result.error)
+              : result.error
+            : null,
+
         // audio: result?.audio?.text ? result?.audio?.text : null,
         audio: null,
         type: "System",
@@ -621,8 +685,10 @@ export class AppController {
     result["messageType"] = messageType;
     result["conversationId"] = conversation.id;
     this.logger.log(
-      "userId =", userId,
-      "sessionId =", sessionId,
+      "userId =",
+      userId,
+      "sessionId =",
+      sessionId,
       "current state while returning response =",
       botFlowService.state.context.currentState
     );
