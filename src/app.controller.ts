@@ -632,6 +632,7 @@ export class AppController {
             if (
               compareText[compareText.length - 1].slice(0, 12) == "Registration"
             ) {
+             
               textToaudio = "";
             } else {
               textToaudio = resArray.pop();
@@ -640,6 +641,7 @@ export class AppController {
           }
         }
         let audioStartTime = Date.now();
+        
         textToaudio = removeLinks(textToaudio);
         result["audio"] = await this.aiToolsService.textToSpeech(
           textToaudio,
@@ -648,6 +650,9 @@ export class AppController {
           userId,
           sessionId
         );
+        if (textToaudio === null) {
+          result["audio"] = { text: "", error: null };
+        } 
       } catch (error) {
         result["audio"] = { text: "", error: error.message };
       }
@@ -711,6 +716,7 @@ export class AppController {
     // verboseLogger("response text", result.text)
     // verboseLogger("response textInEnglish", result.textInEnglish)
     // verboseLogger("response error", result.error)
+    
     return result;
   }
 }
