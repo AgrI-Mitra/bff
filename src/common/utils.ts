@@ -1,16 +1,14 @@
 import { ConstraintMetadata } from "class-validator/types/metadata/ConstraintMetadata";
-import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
-const crypto = require('crypto');
+import { randomBytes, createCipheriv, createDecipheriv } from "crypto";
+const crypto = require("crypto");
 
 const fetch = require("node-fetch");
 const { Headers } = fetch;
-const { Logger } = require('@nestjs/common');
-const { HttpService } = require('@nestjs/axios');
-const { ConfigService } = require('@nestjs/config');
+const { Logger } = require("@nestjs/common");
+const { HttpService } = require("@nestjs/axios");
+const { ConfigService } = require("@nestjs/config");
 
-const logger = new Logger(
-  'utils'
-);
+const logger = new Logger("utils");
 
 export function isMostlyEnglish(text: string): boolean {
   const englishCharacterCount = (
@@ -159,56 +157,52 @@ export const getUniqueKey = (maxSize = 15): string => {
   const chars = "abcdefghijklmnopqrstuvwxyz";
   const data = new Uint8Array(maxSize);
   crypto.getRandomValues(data);
-  
-  const result = Array.from(data)
-      .map(byte => chars[byte % chars.length])
-      .join('')
-      .toUpperCase();
-  console.log(result)
-  return result;
-}
 
+  const result = Array.from(data)
+    .map((byte) => chars[byte % chars.length])
+    .join("")
+    .toUpperCase();
+  console.log(result);
+  return result;
+};
 
 //Encryption Method
 export function encrypt(textToEncrypt: string, key: string): string {
   try {
     // Ensure the key is 16 bytes (AES-128)
     const keyBytes = Buffer.alloc(16, 0); // Create a 16-byte buffer filled with zeros
-    const pwdBytes = Buffer.from(key, 'utf8');
+    const pwdBytes = Buffer.from(key, "utf8");
     pwdBytes.copy(keyBytes, 0, 0, Math.min(pwdBytes.length, keyBytes.length));
 
     const iv = keyBytes; // Use the same value for IV and key
-    const cipher = crypto.createCipheriv('aes-128-cbc', keyBytes, iv);
+    const cipher = crypto.createCipheriv("aes-128-cbc", keyBytes, iv);
 
     // Encrypt the plaintext
     const encrypted = Buffer.concat([
-      cipher.update(Buffer.from(textToEncrypt, 'utf8')),
+      cipher.update(Buffer.from(textToEncrypt, "utf8")),
       cipher.final(),
     ]);
 
     // Return the encrypted text as Base64
-    return encrypted.toString('base64');
+    return encrypted.toString("base64");
   } catch (error) {
     console.error("Error while encrypting the message:", error);
-    return "Error while encrypting the message."
+    return "Error while encrypting the message.";
   }
 }
-
-
-
 
 //Decryption Method
 export function decrypt(textToDecrypt: string, key: string): string {
   try {
     const keyBytes = Buffer.alloc(16); // Create a buffer of 16 bytes for the key
-    const pwdBytes = Buffer.from(key, 'utf-8'); // Convert the key to bytes
+    const pwdBytes = Buffer.from(key, "utf-8"); // Convert the key to bytes
     const len = Math.min(pwdBytes.length, keyBytes.length);
     pwdBytes.copy(keyBytes, 0, 0, len); // Copy the key into the buffer
 
-    const encryptedData = Buffer.from(textToDecrypt, 'base64'); // Convert the encrypted text from Base64 to bytes
+    const encryptedData = Buffer.from(textToDecrypt, "base64"); // Convert the encrypted text from Base64 to bytes
 
     // Initialize the cipher configuration
-    const decipher = createDecipheriv('aes-128-cbc', keyBytes, keyBytes);
+    const decipher = createDecipheriv("aes-128-cbc", keyBytes, keyBytes);
     decipher.setAutoPadding(false); // Set auto padding to false
 
     // Decrypt the data
@@ -216,16 +210,19 @@ export function decrypt(textToDecrypt: string, key: string): string {
     decrypted = Buffer.concat([decrypted, decipher.final()]);
 
     // Convert the decrypted data to a UTF-8 string
-    let decryptedText = decrypted.toString('utf-8');
+    let decryptedText = decrypted.toString("utf-8");
 
     // Trim the decrypted text to remove padding and get the JSON object
-    const lastIndex = decryptedText.lastIndexOf('}');
-    const trimmedText = lastIndex !== -1 ? decryptedText.substring(0, lastIndex + 1) : decryptedText;
+    const lastIndex = decryptedText.lastIndexOf("}");
+    const trimmedText =
+      lastIndex !== -1
+        ? decryptedText.substring(0, lastIndex + 1)
+        : decryptedText;
 
     return trimmedText;
   } catch (error) {
     console.error("Error while decrypting the message:", error);
-    return "Error while decrypting the message."
+    return "Error while decrypting the message.";
   }
 }
 
@@ -251,10 +248,9 @@ export const encryptRequest = async (text: string) => {
     //   requestOptions
     // );
 
- // Extract Token from the parsed text
+    // Extract Token from the parsed text
 
     // response = await response.json();
-    
   } catch (error) {
     console.error("Error while encrypting the message:", error);
     return {
@@ -336,6 +332,9 @@ export const addOrdinalSuffix = (number) => {
 };
 
 export const removeLinks = (inputString) => {
+  if (typeof inputString !== "string") {
+    return null; // or return an empty string, depending on your needs
+  }
   // Define a regular expression pattern for identifying links
   var linkPattern =
     /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/g;
