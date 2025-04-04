@@ -1,4 +1,4 @@
-import { CacheModule, Module, ValidationPipe } from "@nestjs/common";
+import { CacheModule, Module, ValidationPipe, MiddlewareConsumer, RequestMethod } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PrismaService } from "./global-services/prisma.service";
@@ -21,7 +21,7 @@ import { MetricsModule } from './metrics/metrics.module';
 import { QuestionsController } from "./biharkrishi/fetch-db-response/fetchdbresponse.controller";
 import { QuestionsService } from "./biharkrishi/fetch-db-response/fetchdbresponse.service";
 import { UploadModule } from './biharkrishi/upload/upload.module';
-
+import { DeviceInfoMiddleware } from './middleware/deviceMetrics.middleware';
 
 @Module({
   imports: [
@@ -92,4 +92,10 @@ import { UploadModule } from './biharkrishi/upload/upload.module';
   ],
   exports: [CacheProvider],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(DeviceInfoMiddleware)
+      .forRoutes({ path: '/prompt/:configid', method: RequestMethod.ALL });
+  }
+}

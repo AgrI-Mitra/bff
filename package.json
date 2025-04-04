@@ -55,6 +55,7 @@
     "class-validator": "^0.14.0",
     "codecov": "^3.8.3",
     "csv-parser": "^3.0.0",
+    "device-detector-js": "^3.0.3",
     "fastify-compress": "^4.1.0",
     "fastify-helmet": "^7.1.0",
     "fastify-multipart": "^5.4.0",
@@ -80,6 +81,11 @@
     "redis": "^4.6.7",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0",
+    "systeminformation": "^5.25.11",
+    "ua-parser-js": "^2.0.3",
+    "user-agent": "^1.0.4",
+    "user-agents": "^1.1.497",
+    "useragent": "^2.3.0",
     "xstate": "^4.37.2"
   },
   "devDependencies": {
@@ -89,6 +95,7 @@
     "@types/jest": "29.2.4",
     "@types/node": "18.11.18",
     "@types/supertest": "^2.0.11",
+    "@types/useragent": "^2.3.4",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^8.0.1",
