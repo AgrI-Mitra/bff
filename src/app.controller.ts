@@ -127,13 +127,12 @@ export class AppController {
   @ApiOperation({ summary: "Process user prompt" })
   @ApiParam({ name: "configid", description: "Configuration ID" })
   @ApiBody({ type: PromptDto })
-  @ApiHeader({ name: "user-id", description: "User ID" })
-  @ApiHeader({ name: "session-id", description: "Session ID" })
-  @ApiResponse({
-    status: 200,
-    description: "Returns processed prompt response",
-  })
-  @ApiResponse({ status: 400, description: "Missing required headers" })
+  @ApiHeader({ name: 'user-id', description: 'User ID' })
+  @ApiHeader({ name: 'session-id', description: 'Session ID' })
+  @ApiHeader({ name: 'lat', description: 'Lat'})
+  @ApiHeader({ name: 'long', description: 'Long'})
+  @ApiResponse({ status: 200, description: 'Returns processed prompt response' })
+  @ApiResponse({ status: 400, description: 'Missing required headers' })
   @Post("/prompt/:configid")
   async prompt(
     @Body() promptDto: any,
@@ -662,6 +661,7 @@ export class AppController {
 
     let msg = await this.prismaService.message.create({
       data: {
+        //text: result?.text ? result?.text : result.error ? result.error : null,
         text:
           typeof result?.text === "object"
             ? JSON.stringify(result.text) // Convert JSON to string
@@ -672,7 +672,6 @@ export class AppController {
               ? JSON.stringify(result.error)
               : result.error
             : null,
-
         // audio: result?.audio?.text ? result?.audio?.text : null,
         audio: null,
         type: "System",

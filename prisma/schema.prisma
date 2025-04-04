@@ -120,3 +120,16 @@ model BiharKrishiMetrics {
   @@index([status])
   @@index([createdAt])
 }
+model DeviceMetrics {
+  latitude   Float?
+  longitude  Float?
+  id          String  @id @default(uuid())
+  did         String  
+  browserName String
+  osName      String
+  deviceType  String
+  deviceName  String
+  sessionId   String?
+  userId      String?
+  createdAt   DateTime @default(now())
+}
