@@ -126,18 +126,24 @@ export class SoilhealthcardService {
   async getSoilHealthCard(phoneNumber: string): Promise<any> {
     try {
       const token = await this.generateAccessToken();
-      
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
       this.logger.log('Making request for phone:', formattedPhone);
-
+  
       const requestBody = {
-        query: `query GetTestForAuthUser($phone: PhoneNumber!, $state: String!, $district: String!, $cycle: String!, $scheme: String!) {
+        query: `query GetTestForAuthUser($computedId: String, $phone: PhoneNumber, $state: String, $district: String, $name: String, $farmer: String, $from: Datetime, $to: Datetime, $cycle: String, $locale: String, $scheme: String, $limit: Int, $skip: Int) {
           getTestForAuthUser(
+            computedID: $computedId,
             phone: $phone,
             state: $state,
             district: $district,
+            name: $name,
+            farmer: $farmer,
+            from: $from,
+            to: $to,
             cycle: $cycle,
-            scheme: $scheme
+            scheme: $scheme,
+            limit: $limit,
+            skip: $skip
           ) {
             id
             computedID
@@ -151,6 +157,7 @@ export class SoilhealthcardService {
             farmer {
               address
               name
+              phone
             }
             crop
             location
@@ -165,27 +172,26 @@ export class SoilhealthcardService {
             village
             results
             fertilizer
-            html
+            html(locale: $locale)
             uniqueID
           }
         }`,
         variables: {
           phone: formattedPhone,
-          state: this.configService.get("SOIL_HEALTH_STATE"),
-          district: this.configService.get("SOIL_HEALTH_DISTRICT"),
-          cycle: this.configService.get("SOIL_HEALTH_CYCLE"),
-          scheme: this.configService.get("SOIL_HEALTH_SCHEME")
-        }
+          cycle: this.configService.get('SOIL_HEALTH_CYCLE'),
+          limit: 1,
+          skip: 0,
+        },
       };
-
+  
       this.logger.log('Soil health request:', {
         url: this.configService.get('SOIL_HEALTH_BASE_URL'),
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        variables: requestBody.variables // Log the variables we're sending
+        variables: requestBody.variables,
       });
-
+  
       const response = await firstValueFrom(
         this.httpService.post<SoilHealthResponse>(
           this.configService.get('SOIL_HEALTH_BASE_URL'),
@@ -193,30 +199,40 @@ export class SoilhealthcardService {
           {
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
+              'Authorization': `Bearer ${token}`,
+            },
           }
         )
       );
-
-      console.log('Soil health response:', {
-        status: response.status,
-        data: JSON.stringify(response.data, null, 2),
-        errors: response.data?.errors // Log any GraphQL errors
-      });
-
+  
       if (!response.data?.data?.getTestForAuthUser?.length) {
         this.logger.warn('No soil health card found:', {
           phone: formattedPhone,
           response: response.data,
-          variables: requestBody.variables // Log the variables that resulted in no data
+          variables: requestBody.variables,
         });
         throw new Error('No soil health card found for this mobile number');
       }
-
+  
       const soilHealthData = response.data.data.getTestForAuthUser[0];
-      return this.formatSoilHealthResponse(soilHealthData);
-
+      
+      // Format the response data before returning
+      const formattedResponse = this.formatSoilHealthResponse(soilHealthData);
+      
+      // Convert any JSON objects to strings before saving to database
+      const messageContent = typeof formattedResponse === 'object' 
+        ? (formattedResponse)
+        : formattedResponse;
+  
+      return {
+        type: 'soil_health_card',
+        content: messageContent,
+        metadata: {
+          phone: formattedPhone,
+          requestId: response.data?.data?.getTestForAuthUser[0]?.id || null,
+        }
+      };
+  
     } catch (error) {
       if (error.response?.status === 401) {
         this.logger.warn('Authentication failed, clearing tokens and retrying...');
@@ -228,9 +244,9 @@ export class SoilhealthcardService {
         message: error.message,
         response: error.response?.data,
         errors: error.response?.data?.errors,
-        variables: error.config?.data, // Log the variables that caused the error
+        variables: error.config?.data,
         stack: error.stack,
-        phone: phoneNumber
+        phone: phoneNumber,
       });
       throw new Error(error.response?.data?.message || 'Failed to fetch soil health card');
     }
@@ -276,7 +292,7 @@ export class SoilhealthcardService {
           crop: data.crop,
           status: data.status,
           uniqueID: data.uniqueID,
-          html: this.sanitizeHtml(htmlContent)
+          html: htmlContent
         },
         message: `Dear ${farmerName}, here is your Soil Health Card report.`
       };

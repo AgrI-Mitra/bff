@@ -481,13 +481,6 @@
     readable-stream "^3.4.0"
     send "^0.17.1"
 
-"@fingerprintjs/fingerprintjs@^4.6.1":
-  version "4.6.1"
-  resolved "https://registry.yarnpkg.com/@fingerprintjs/fingerprintjs/-/fingerprintjs-4.6.1.tgz#af91467c4bd6b61453a6adf1a94477b71a51e7db"
-  integrity sha512-62TPnX6fXXMlxS7SOR3DJWEOKab7rCALwSWkuKWYMRrnsZ/jD9Ju4CUyy9VWDUYuhQ2ZW1RGLwOZJXTXR6K1pg==
-  dependencies:
-    tslib "^2.4.1"
-
 "@graphql-typed-document-node/core@^3.1.1":
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/@graphql-typed-document-node/core/-/core-3.2.0.tgz#5f3d96ec6b2354ad6d8a28bf216a1d97b5426861"
@@ -1186,11 +1179,6 @@
     "@types/express-serve-static-core" "^4.17.33"
     "@types/qs" "*"
     "@types/serve-static" "*"
-
-"@types/fingerprintjs@^0.5.28":
-  version "0.5.28"
-  resolved "https://registry.yarnpkg.com/@types/fingerprintjs/-/fingerprintjs-0.5.28.tgz#9d8718677add858b7ffab6f01b2e2eeb390eaa50"
-  integrity sha512-y4HGQNMocps8rj+S/2Q+qtVqI9XEE8ax2txSThPq9PHQq1ExLaShci31KAcLUtE+bczXEGeW8LzUqqwWlGk+KQ==
 
 "@types/graceful-fs@^4.1.3":
   version "4.1.9"
@@ -3208,11 +3196,6 @@ find-up@^5.0.0:
     locate-path "^6.0.0"
     path-exists "^4.0.0"
 
-fingerprintjs@^0.5.3:
-  version "0.5.3"
-  resolved "https://registry.yarnpkg.com/fingerprintjs/-/fingerprintjs-0.5.3.tgz#0026422fae1ab1003691e136c143e19b7527b255"
-  integrity sha512-LPW+iJ9yaV+FIXbmPkbyp7n6UoxV1euVozieaq3ckuvPEAyJRRB0JxbBsShHh5h1jc9yn/EZ95EEb78109zuKg==
-
 flat-cache@^3.0.4:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/flat-cache/-/flat-cache-3.2.0.tgz#2c0c2d5040c99b1632771a9d105725c0115363ee"
@@ -3801,11 +3784,6 @@ is-unicode-supported@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/is-unicode-supported/-/is-unicode-supported-0.1.0.tgz#3f26c76a809593b52bfa2ecb5710ed2779b522a7"
   integrity sha512-knxG2q4UC3u8stRGyAVJCOdxFmv5DZiRcdlIaAQXAbSfJya+OhopNotLQrstBhququ4ZpuKbDc/8S6mgXgPFPw==
-
-is-unicode-supported@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/is-unicode-supported/-/is-unicode-supported-1.3.0.tgz#d824984b616c292a2e198207d4a609983842f714"
-  integrity sha512-43r2mRvz+8JRIKnWJ+3j8JtjRKZ6GmjzfaE/qiBJnikNnYv/6bagRJ1kUhNk8R5EX/GkobD+r+sfxCPJsiKBLQ==
 
 is-zip@^1.0.0:
   version "1.0.0"
@@ -6247,7 +6225,7 @@ tslib@^1.10.0, tslib@^1.8.1, tslib@^1.9.3:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
   integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
-tslib@^2.1.0, tslib@^2.3.0, tslib@^2.4.1:
+tslib@^2.1.0, tslib@^2.3.0:
   version "2.8.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.8.1.tgz#612efe4ed235d567e8aba5f2a5fab70280ade83f"
   integrity sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==
