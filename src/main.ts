@@ -11,14 +11,14 @@ import multipart from "@fastify/multipart";
 import compression from "@fastify/compress";
 import { join } from "path";
 import { MonitoringService } from "./modules/monitoring/monitoring.service";
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Logger } from 'nestjs-pino';
-import { Logger as NestLogger } from '@nestjs/common';
-import { AppClusterService } from './app-cluster.service';
-
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { Logger } from "nestjs-pino";
+import { Logger as NestLogger } from "@nestjs/common";
+import { AppClusterService } from "./app-cluster.service";
+import { telemetryMiddleware } from "./telemetry/telemetry.middleware";
 
 async function bootstrap() {
-  process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'
+  process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
   /** Fastify Application */
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -35,16 +35,16 @@ async function bootstrap() {
 
   // Setup Swagger
   const config = new DocumentBuilder()
-    .setTitle('PM Kisan API Documentation')
-    .setDescription('The PM Kisan API description')
-    .setVersion('1.0')
+    .setTitle("PM Kisan API Documentation")
+    .setDescription("The PM Kisan API description")
+    .setVersion("1.0")
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup("api", app, document);
 
   app.useLogger(app.get(Logger));
-  const logger = new NestLogger('main');
+  const logger = new NestLogger("main");
   app.register(helmet, {
     contentSecurityPolicy: {
       directives: {
@@ -56,41 +56,50 @@ async function bootstrap() {
     },
   });
 
-  process.on('exit', (code) => {
+  process.on("exit", (code) => {
     logger.log(`Process is exiting with code: ${code}`);
-  })
+  });
 
-  process.on('beforeExit', async () => {
-    logger.log("process exit...")
+  process.on("beforeExit", async () => {
+    logger.log("process exit...");
     const monitoringService = app.get<MonitoringService>(MonitoringService);
     await monitoringService.onExit();
   });
 
-  process.on('SIGINT', async () => {
-    logger.log('Received SIGINT signal. Gracefully shutting down...');
+  process.on("SIGINT", async () => {
+    logger.log("Received SIGINT signal. Gracefully shutting down...");
     const monitoringService = app.get<MonitoringService>(MonitoringService);
     await monitoringService.onExit();
     process.exit(0);
   });
 
-  process.on('SIGTERM', async () => {
-    logger.log('Received SIGTERM signal. Gracefully shutting down...');
+  process.on("SIGTERM", async () => {
+    logger.log("Received SIGTERM signal. Gracefully shutting down...");
     const monitoringService = app.get<MonitoringService>(MonitoringService);
     await monitoringService.onExit();
     process.exit(0);
   });
 
   app.enableCors({
-    origin: configService.get<string>('CORS_ALLOWED_ORIGINS', '').split(','),
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    origin: configService.get<string>("CORS_ALLOWED_ORIGINS", "").split(","),
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
     credentials: true,
   });
   await app.register(multipart);
   await app.register(compression, { encodings: ["gzip", "deflate"] });
   app.useStaticAssets({ root: join(__dirname, "../../fileUploads") });
+
+  // Access the Fastify instance
+  const fastifyInstance = app.getHttpAdapter().getInstance();
+
+  // Register the telemetry middleware
+  // Add a hook to the specific route
+  fastifyInstance.addHook('preHandler', async (request, reply) => {
+    if (request.routerPath === '/prompt/:configid') {
+      await telemetryMiddleware(request, reply);
+    }
+  });
   await app.listen(3000, "0.0.0.0");
 }
-
-
 
 AppClusterService.clusterize(bootstrap);
