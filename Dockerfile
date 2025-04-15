@@ -34,5 +34,10 @@ ARG SERVER_RELEASE_VERSION
 ENV SERVER_RELEASE_VERSION=${SERVER_RELEASE_VERSION}
 
 EXPOSE 3000
-CMD ["/bin/sh", "-c", "if [ \"$CI_ENV\" = \"CI\" ]; then npm run start:migrate:ci; else npm run start:migrate:prod; fi"]
-# CMD [ "npm", "run", "start:prod" ]
+CMD ["/bin/sh", "-c", "if [ \"$CI_ENV\" = \"CI\" ]; then \
+    npx prisma migrate reset --skip-seed --force && npm run start:migrate:ci; \
+  else \
+    npx prisma migrate deploy && \
+    npm run start:migrate:prod; \
+  fi"]
+  # CMD [ "npm", "run", "start:prod" ]
