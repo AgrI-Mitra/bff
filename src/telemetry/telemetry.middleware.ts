@@ -4,6 +4,7 @@ import * as crypto from "crypto";
 import * as si from "systeminformation";
 import { PrismaService } from "../global-services/prisma.service";
 import fetch from "node-fetch";
+import { addToTelemetryBatch } from "./telemetry-processor";
 
 export async function telemetryMiddleware(
   request: FastifyRequest,
@@ -54,7 +55,14 @@ export async function telemetryMiddleware(
       userId,
       sessionId,
     };
-    await prisma.deviceMetrics.create({ data: deviceInfo });
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (userExists) {
+      await prisma.deviceMetrics.create({ data: deviceInfo });
+    } else {
+      addToTelemetryBatch(deviceInfo); // use batch
+    }
   } catch (error) {
     console.error("Error in telemetry middleware:", error);
     reply.code(500).send("Internal Server Error");

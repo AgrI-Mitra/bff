@@ -16,6 +16,7 @@ import { Logger } from "nestjs-pino";
 import { Logger as NestLogger } from "@nestjs/common";
 import { AppClusterService } from "./app-cluster.service";
 import { telemetryMiddleware } from "./telemetry/telemetry.middleware";
+import "./telemetry/telemetry-processor";
 
 async function bootstrap() {
   process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
