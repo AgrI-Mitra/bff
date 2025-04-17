@@ -129,8 +129,6 @@ export class AppController {
   @ApiBody({ type: PromptDto })
   @ApiHeader({ name: 'user-id', description: 'User ID' })
   @ApiHeader({ name: 'session-id', description: 'Session ID' })
-  @ApiHeader({ name: 'lat', description: 'Lat'})
-  @ApiHeader({ name: 'long', description: 'Long'})
   @ApiResponse({ status: 200, description: 'Returns processed prompt response' })
   @ApiResponse({ status: 400, description: 'Missing required headers' })
   @Post("/prompt/:configid")

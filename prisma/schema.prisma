@@ -26,6 +26,8 @@ model User {
   identifier   String?
   isVerified   Boolean  @default(false)
   messages     Message[]
+
+  deviceMetrics DeviceMetrics[]
 }
 model Message {
   id              String   @id @default(uuid())
@@ -121,15 +123,20 @@ model BiharKrishiMetrics {
   @@index([createdAt])
 }
 model DeviceMetrics {
-  latitude   Float?
-  longitude  Float?
   id          String  @id @default(uuid())
-  did         String  
-  browserName String
-  osName      String
+  did         String
+  sessionId   String
+  userId      String   @db.Uuid  
   deviceType  String
   deviceName  String
-  sessionId   String?
-  userId      String?
+  browserName String
+  osName      String
+  latitude    Float?
+  longitude   Float?  
+  state       String
+  district    String
+  language    String 
   createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
 }
