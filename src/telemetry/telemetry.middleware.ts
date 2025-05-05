@@ -5,12 +5,16 @@ import * as si from "systeminformation";
 import { PrismaService } from "../global-services/prisma.service";
 import fetch from "node-fetch";
 import { addToTelemetryBatch } from "./telemetry-processor";
+import { Logger } from "@nestjs/common";
+
 
 export async function telemetryMiddleware(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
   const prisma = new PrismaService();
+  const logger = new Logger('Telemetry');
+
 
   try {
     const userId = request.headers["user-id"] as string;
@@ -38,8 +42,8 @@ export async function telemetryMiddleware(
       (/mobile/i.test(userAgent)
         ? "mobile"
         : /tablet|iPad/i.test(userAgent)
-        ? "tablet"
-        : "desktop");
+          ? "tablet"
+          : "desktop");
 
     const deviceInfo = {
       did,
@@ -55,11 +59,18 @@ export async function telemetryMiddleware(
       userId,
       sessionId,
     };
+    logger.log(`DEVICE INFO: ${JSON.stringify(deviceInfo)}`);
     const userExists = await prisma.user.findUnique({
       where: { id: userId },
     });
     if (userExists) {
-      await prisma.deviceMetrics.create({ data: deviceInfo });
+      const { userId, ...deviceInfoWithoutUserId } = deviceInfo;
+      await prisma.deviceMetrics.create({
+        data: {
+          ...deviceInfoWithoutUserId,
+          user: { connect: { id: userId } }
+        }
+      });
     } else {
       addToTelemetryBatch(deviceInfo); // use batch
     }

@@ -3,7 +3,7 @@ import { PrismaService } from '../global-services/prisma.service';
 import { Logger } from "@nestjs/common";
 
 const prisma = new PrismaService();
-const logger = new Logger('TelemetryProcessor');
+const logger = new Logger('TelemetryProcessor ');
 
 const telemetryBatch: any[] = [];
 const BATCH_INTERVAL = 60000; // 60 seconds
