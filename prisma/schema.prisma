@@ -132,8 +132,8 @@ model DeviceMetrics {
   osName      String
   latitude    Float?
   longitude   Float?  
-  state       String
-  district    String
+  state       String?
+  district    String?
   language    String 
   createdAt   DateTime @default(now())
   
