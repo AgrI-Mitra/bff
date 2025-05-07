@@ -15,6 +15,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { Logger as NestLogger } from '@nestjs/common';
 import { AppClusterService } from './app-cluster.service';
+import { telemetryMiddleware } from "./telemetry/telemetryMiddleware";
 
 
 async function bootstrap() {
@@ -88,6 +89,11 @@ async function bootstrap() {
   await app.register(multipart);
   await app.register(compression, { encodings: ["gzip", "deflate"] });
   app.useStaticAssets({ root: join(__dirname, "../../fileUploads") });
+  app.getHttpAdapter().getInstance().addHook('preHandler', async (request, reply) => {
+    if (request.routerPath === '/prompt/:configid') {
+      await telemetryMiddleware(request, reply);
+    }
+  });
   await app.listen(3000, "0.0.0.0");
 }
 
