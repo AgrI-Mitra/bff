@@ -26,6 +26,7 @@ model User {
   identifier   String?
   isVerified   Boolean  @default(false)
   messages     Message[]
+  deviceMetrics DeviceMetrics[]
 }
 model Message {
   id              String   @id @default(uuid())
@@ -127,14 +128,21 @@ model DeviceMetrics {
   userId      String   @db.Uuid  
   deviceType  String
   deviceName  String
+  did         String
+  sessionId   String
+  userId      String   @db.Uuid  
+  deviceType  String
+  deviceName  String
   browserName String
   osName      String
   latitude    Float?
   longitude   Float?  
-  state       String
-  district    String
+  state       String?
+  district    String?
   language    String 
   createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
   
   user        User     @relation(fields: [userId], references: [id])
 }

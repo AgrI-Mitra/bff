@@ -11,12 +11,12 @@ import multipart from "@fastify/multipart";
 import compression from "@fastify/compress";
 import { join } from "path";
 import { MonitoringService } from "./modules/monitoring/monitoring.service";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { Logger } from "nestjs-pino";
-import { Logger as NestLogger } from "@nestjs/common";
-import { AppClusterService } from "./app-cluster.service";
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
+import { Logger as NestLogger } from '@nestjs/common';
+import { AppClusterService } from './app-cluster.service';
 import { telemetryMiddleware } from "./telemetry/telemetryMiddleware";
-import "./telemetry/telemetry-processor";
+
 
 async function bootstrap() {
   process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
@@ -89,13 +89,7 @@ async function bootstrap() {
   await app.register(multipart);
   await app.register(compression, { encodings: ["gzip", "deflate"] });
   app.useStaticAssets({ root: join(__dirname, "../../fileUploads") });
-
-  // Access the Fastify instance
-  const fastifyInstance = app.getHttpAdapter().getInstance();
-
-  // Register the telemetry middleware
-  // Add a hook to the specific route
-  fastifyInstance.addHook('preHandler', async (request, reply) => {
+  app.getHttpAdapter().getInstance().addHook('preHandler', async (request, reply) => {
     if (request.routerPath === '/prompt/:configid') {
       await telemetryMiddleware(request, reply);
     }

@@ -5,6 +5,7 @@ on:
     branches:
       - dev
       - main
+      - Dashboard(bff) 
 
 env:
   DOCKER_USERNAME: ${{ github.actor }}
