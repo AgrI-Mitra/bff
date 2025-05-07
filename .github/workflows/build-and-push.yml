@@ -5,7 +5,7 @@ on:
     branches:
       - dev
       - main
-      - Dashboard(bff) 
+      - telemetry-staging-bff 
 
 env:
   DOCKER_USERNAME: ${{ github.actor }}
