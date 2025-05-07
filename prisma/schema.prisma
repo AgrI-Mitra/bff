@@ -122,20 +122,20 @@ model BiharKrishiMetrics {
   @@index([createdAt])
 }
 model DeviceMetrics {
-  id          String  @id @default(uuid())
-  did         String
-  sessionId   String
-  userId      String   @db.Uuid  
-  deviceType  String
-  deviceName  String
-  browserName String
-  osName      String
+  id          String   @id @default(uuid())
+  did         String?
+  sessionId   String?
+  userId      String?  @db.Uuid
+  deviceType  String?
+  deviceName  String?
+  browserName String?
+  osName      String?
   latitude    Float?
-  longitude   Float?  
+  longitude   Float?
   state       String?
   district    String?
-  language    String 
-  createdAt   DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id])
+  language    String?
+  createdAt   DateTime? @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id])
 }

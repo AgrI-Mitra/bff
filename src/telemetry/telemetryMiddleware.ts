@@ -66,9 +66,16 @@ export async function telemetryMiddleware(
             sessionId,
         };
         logger.log(`DEVICE INFO: ${JSON.stringify(deviceInfo)}`);
-        const userExists = await prisma.user.findUnique({
-            where: { id: userId },
-        });
+        let userExists;
+        if (userId) {
+            userExists = await prisma.user.findUnique({
+                where: { id: userId },
+            });
+        } else {
+            // handle the case where userId is not present
+            console.warn("userId is undefined, skipping user lookup");
+        }
+
         if (userExists) {
             const { userId, ...deviceInfoWithoutUserId } = deviceInfo;
             await prisma.deviceMetrics.create({

@@ -1,0 +1,16 @@
+-- DropForeignKey
+ALTER TABLE "DeviceMetrics" DROP CONSTRAINT "DeviceMetrics_userId_fkey";
+
+-- AlterTable
+ALTER TABLE "DeviceMetrics" ALTER COLUMN "did" DROP NOT NULL,
+ALTER COLUMN "browserName" DROP NOT NULL,
+ALTER COLUMN "osName" DROP NOT NULL,
+ALTER COLUMN "deviceType" DROP NOT NULL,
+ALTER COLUMN "deviceName" DROP NOT NULL,
+ALTER COLUMN "sessionId" DROP NOT NULL,
+ALTER COLUMN "createdAt" DROP NOT NULL,
+ALTER COLUMN "language" DROP NOT NULL,
+ALTER COLUMN "userId" DROP NOT NULL;
+
+-- AddForeignKey
+ALTER TABLE "DeviceMetrics" ADD CONSTRAINT "DeviceMetrics_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
