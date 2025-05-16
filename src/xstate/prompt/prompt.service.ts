@@ -20,6 +20,7 @@ const filePath = path.resolve(__dirname, "../../common/kisanPortalErrors.json");
 const PMKissanProtalErrors = require(filePath);
 import * as moment from "moment";
 import { SoilhealthcardService } from "src/modules/soilhealthcard/soilhealthcard.service";
+import { PmfbyService } from "src/modules/pmfby/pmfby.service";
 
 
 @Injectable()
@@ -34,6 +35,7 @@ export class PromptServices {
     private aiToolsService: AiToolsService,
     private monitoringService: MonitoringService,
     private soilHealthCardService: SoilhealthcardService,
+    private pmfbyService: PmfbyService,
     // private userService: UserService
   ) {
     this.userService = new UserService(
@@ -48,61 +50,65 @@ export class PromptServices {
     return context;
   }
 
-  async questionClassifier (context) {
+  async questionClassifier(context) {
     this.logger.log("IN questionclassifier");
     try {
-        let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId, context.query, context.schemeName)
-        this.logger.log("response is :", response)
-        if (response.error) throw new Error(`${response.error}, please try again.`)
-        let intent;
-        
-        // Use if-else if structure to ensure only one condition is matched
-        if (response.query_intent == "Invalid") {
-            intent = "convo"
-        } else if (response.query_intent == "convo_starter") {
-            intent = "convo"
-        } else if (response.query_intent == "convo_ender") {
-            intent = "convo"
-        } else if (response.query_intent == "Installment Not Received") {
-            intent = "payment"
-        } else if (response.query_intent == "SHC Download") {
-            intent = "SHC PDF"
-        } else {
-            intent = "invalid"
-        }
-        
-        this.logger.log("intent is:", intent);
-        return {
-            class: intent,
-            response: response.response
-        }
+      let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId, context.query, context.schemeName)
+      this.logger.log("response is :", response)
+      if (response.error) throw new Error(`${response.error}, please try again.`)
+      let intent;
+
+      // Use if-else if structure to ensure only one condition is matched
+      if (response.query_intent == "Invalid") {
+        intent = "convo"
+      } else if (response.query_intent == "convo_starter") {
+        intent = "convo"
+      } else if (response.query_intent == "convo_ender") {
+        intent = "convo"
+      } else if (response.query_intent == "Installment Not Received") {
+        intent = "payment"
+      } else if (response.query_intent == "SHC Download") {
+        intent = "SHC PDF"
+      } else if (response.query_intent == "PMFBY Claim Status") {
+        intent = "pmfby_claim"
+      } else if (response.query_intent == "PMFBY Policy Status") {
+        intent = "pmfby_policy"
+      } else {
+        intent = "invalid"
+      }
+
+      this.logger.log("intent is:", intent);
+      return {
+        class: intent,
+        response: response.response
+      }
     } catch (error) {
-        return Promise.reject(error)
+      return Promise.reject(error)
     }
   }
 
-//   async questionClassifier (context) {
-//     this.logger.log("IN questionclassifier");
-//     try{
-//         let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId, context.query, context.schemeName)
-//         // if (response.error) throw new Error(`${response.error}, please try again.`)
-//         // let intent;
-//         // if (response.query_intent == "Invalid") intent = "convo"
-//         // if (response.query_intent == "convo_starter") intent =  "convo"
-//         // if (response.query_intent == "convo_ender") intent =  "convo"
-//         // if (response.query_intent == "Installment Not Received") intent = "payment"
-//         // else {
-//         //     intent = "invalid"
-//         // }
-//         let intent = "soil_health_card"
-//         return {
-//             class: intent,
-//             response: response.response
-//         }
-//     } catch (error){
-//         return Promise.reject(error)
-//     }
-// }
+  //   async questionClassifier (context) {
+  //     this.logger.log("IN questionclassifier");
+  //     try{
+  //         let response: any = await this.aiToolsService.getResponseViaWadhwani(context.sessionId, context.userId, context.query, context.schemeName)
+  //         // if (response.error) throw new Error(`${response.error}, please try again.`)
+  //         // let intent;
+  //         // if (response.query_intent == "Invalid") intent = "convo"
+  //         // if (response.query_intent == "convo_starter") intent =  "convo"
+  //         // if (response.query_intent == "convo_ender") intent =  "convo"
+  //         // if (response.query_intent == "Installment Not Received") intent = "payment"
+  //         // else {
+  //         //     intent = "invalid"
+  //         // }
+  //         let intent = "soil_health_card"
+  //         return {
+  //             class: intent,
+  //             response: response.response
+  //         }
+  //     } catch (error){
+  //         return Promise.reject(error)
+  //     }
+  // }
 
   async logError(_, event) {
     this.logger.log("logError");
@@ -221,7 +227,7 @@ export class PromptServices {
     if (res.d.output.Message == "Unable to get user details") {
       return Promise.reject(new Error(res.d.output.Message));
     }
-        let userDetails = AADHAAR_GREETING_MESSAGE(
+    let userDetails = AADHAAR_GREETING_MESSAGE(
       titleCase(res.d.output["BeneficiaryName"]),
       titleCase(res.d.output["FatherName"]),
       res.d.output["DOB"],
@@ -259,8 +265,8 @@ export class PromptServices {
       // });
       // console.log("body", data);
       let data = {
-        "EncryptedRequest":`${encrypted_text}@${token}`
-       };
+        "EncryptedRequest": `${encrypted_text}@${token}`
+      };
 
       let config = {
         method: "post",
@@ -273,7 +279,7 @@ export class PromptServices {
         },
         data: data,
       };
-      this.logger.log("In fetchUserData:",config)
+      this.logger.log("In fetchUserData:", config)
       let errors: any = await axios.request(config);
       errors = await errors.data;
       this.logger.log("related issues", errors);
@@ -315,11 +321,11 @@ export class PromptServices {
         "Paymentfailurereason": "",
         "NPCI_Seeding_Status": "NPCI Seeded",
         "eKYC_Status": "Done"
-    };
+      };
       this.logger.log("Response from FetchUserdata: ", errors);
       if (errors.Rsponce == "True") {
-        const queryType = typeof context.queryType === 'object' 
-          ? context.queryType.class 
+        const queryType = typeof context.queryType === 'object'
+          ? context.queryType.class
           : context.queryType;
         Object.entries(errors).forEach(([key, value]) => {
           if (key != "Rsponce" && key != "Message") {
@@ -407,6 +413,72 @@ export class PromptServices {
     }
   }
 
+  async validatePmfbyMobile(context) {
+    try {
+      // Basic mobile number validation
+      const isValid = /^[6-9]\d{9}$/.test(context.pmfbyMobile);
+      if (!isValid) {
+        return false;
+      }
+      return true;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  async fetchPmfbyData(context) {
+    this.logger.log("Fetching PMFBY data");
+    try {
+      // 1. Get PMFBY token
+      const token = await this.pmfbyService.getPmfbyToken();
+      this.logger.log("PMFBY token obtained");
+
+      // 2. Get Farmer ID
+      const farmerId = await this.pmfbyService.getFarmerId(context.pmfbyMobile);
+      this.logger.log(`Farmer ID obtained: ${farmerId}`);
+
+      // 3. Fetch the appropriate data based on the flow
+      let result;
+      if (context.isPmfbyClaim) {
+        // Get claim status
+        result = await this.pmfbyService.getClaimStatus(
+          farmerId,
+          context.pmfbySeason,
+          context.pmfbyYear,
+          token
+        );
+
+        // Format user-friendly response
+        if (result && result.data && result.data.length > 0) {
+          const claims = result.data[0];
+          return claims;
+        } else {
+          return "No claim records found for the provided details. Please verify your information or contact your nearest agriculture office.";
+        }
+      } else if (context.isPmfbyPolicy) {
+        // Get policy status
+        result = await this.pmfbyService.getPolicyStatus(
+          farmerId,
+          context.pmfbySeason,
+          context.pmfbyYear,
+          token
+        );
+
+        // Format user-friendly response
+        if (result && result.data && result.data.length > 0) {
+          const policies = result.data;
+          return policies;
+        } else {
+          return "No policy records found for the provided details. Please verify your information or contact your nearest agriculture office.";
+        }
+      } else {
+        throw new Error("Invalid PMFBY flow type");
+      }
+    } catch (error) {
+      this.logger.error(`Error fetching PMFBY data: ${error.message}`);
+      return Promise.reject(new Error(`Unable to fetch PMFBY data: ${error.message}`));
+    }
+  }
 
   allFunctions() {
     return {
@@ -419,6 +491,8 @@ export class PromptServices {
       wadhwaniClassifier: this.wadhwaniClassifier.bind(this),
       validatePhoneNumber: this.validatePhoneNumber.bind(this),
       fetchSoilHealthCard: this.fetchSoilHealthCard.bind(this),
+      validatePmfbyMobile: this.validatePmfbyMobile.bind(this),
+      fetchPmfbyData: this.fetchPmfbyData.bind(this),
     };
   }
 
