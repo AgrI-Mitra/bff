@@ -3,9 +3,10 @@ import { CacheModule, Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "src/global-services/prisma.service";
 import { AiToolsService } from "src/modules/aiTools/ai-tools.service";
-import { UserService } from "src/modules/user/user.service";
+import { PmfbyModule } from "src/modules/pmfby/pmfby.module";
+import { PmfbyService } from "src/modules/pmfby/pmfby.service";
 import { SoilhealthcardService } from "src/modules/soilhealthcard/soilhealthcard.service";
-// import { SoilhealthcardModule } from "src/soilhealthcard/soilhealthcard.module";
+import { UserService } from "src/modules/user/user.service";
 import { UserModule } from "src/modules/user/user.module";
 import { PromptServices } from "./prompt.service";
 
@@ -13,7 +14,6 @@ import { PromptServices } from "./prompt.service";
   imports: [
     CacheModule.register(),
     HttpModule,
-    // SoilhealthcardModule,
     UserModule,
   ],
   providers: [
@@ -22,6 +22,7 @@ import { PromptServices } from "./prompt.service";
     AiToolsService,
     UserService,
     SoilhealthcardService,
+    PmfbyService,
     PromptServices,
   ],
   controllers: [],

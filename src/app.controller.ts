@@ -35,6 +35,7 @@ import {
   ApiBody,
   ApiHeader,
 } from "@nestjs/swagger";
+import { PmfbyService } from "./modules/pmfby/pmfby.service";
 const uuid = require("uuid");
 const path = require("path");
 const filePath = path.resolve(__dirname, "./common/en.json");
@@ -83,6 +84,7 @@ export class AppController {
   private prismaService: PrismaService;
   private promptService: PromptServices;
   private soilHealthCardService: SoilhealthcardService;
+  private pmfbyService: PmfbyService;
   private logger: Logger;
 
   constructor(
@@ -96,6 +98,10 @@ export class AppController {
     this.soilHealthCardService = new SoilhealthcardService(
       this.configService,
       this.httpService
+    );
+    this.pmfbyService = new PmfbyService(
+      this.httpService,
+      this.configService
     );
     this.aiToolsService = new AiToolsService(
       this.configService,
@@ -112,7 +118,8 @@ export class AppController {
       this.configService,
       this.aiToolsService,
       this.monitoringService,
-      this.soilHealthCardService
+      this.soilHealthCardService,
+      this.pmfbyService
     );
     this.logger = new Logger(AppService.name);
   }

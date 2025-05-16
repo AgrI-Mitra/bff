@@ -47,4 +47,9 @@ export const promptGuards = {
   ifInvalidClassifier: (_, event) => event.data.class == "invalid",
 
   ifConvoStarterOrEnder: (_, event) => event.data.class == "convo",
+
+  ifPmfbyClaim: (_, event) => event.data?.class === "pmfby_claim",
+
+  ifPmfbyPolicy: (_, event) => event.data?.class === "pmfby_policy",
 };
+

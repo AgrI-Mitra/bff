@@ -10,7 +10,7 @@ const logger = new Logger(
 );
 
 export const botFlowMachine1: any = {
-  /** @xstate-layout N4IgpgJg5mDOIC5QCMD2AXAYgG1QdwDoZ0BVWMAJwEUBXOdAS1QDsBiEgZQFEAlAfQCSAOQAKJACoBtAAwBdRKAAOqWA0YsFIAB6IAjAA4AzAQAsukwDZDAVhMAma3f26ANCACeiALR2DBXQCc0sHWAboWugDsutIWAL5xbmhYuIQAjnSw6swAwtgAhrCqAGYMlKwQLGAEDMwAbqgA1tXJOPgEGfRMuQVFDKWUCLUNAMb52TKyk5rKqtmaOgi61rqmJtb61tbS+hYm0tFunghmBNJ2VvoHAfrRJobmCUkYbemZ2XmFJWUUrJQUqAoBEUBXQxUBAFsCK1Uh13t1Pn0BhQhvVUGMJnJpkgQLM1N0Ft5ItYCE57BtDBZNtYLNYjt59PoCLtrJFdmELoZDHZIk8QDD2oVGrUoABBfIQAAW+XyFCENAhyHKnF4glEEmxShU+I0OMWUSZ4UsFgcPOCAXW9IQdhMkVJkQdhluFxWtmsfIFhDq+WwDAg4xF4qlMrlCqVv0qzGqwyaLResO9vv9jGYYol0tl8sVgxjGO6k01uO18z13kcFgIAQsARWkUpGyc+itjmkBGs3K5gQdkRr+g98faib9AdTQYzoezEaqNTRzWhA69PuHKbTwczYZzaLzLALunkOLxJdA+p2qx25cZ5gCDmbdlb7bsnYC3d7-ZSg6XycD6ZDWfDFWnGM509Aghy-Ucf3XSdUVGAMdyxOx9y1OYCVLBAaQCStpF0QxIhtW1OxMW97w7B5nwdV9En5BdQM-EdV3HP9ykjaNZzjd9FyTeix1-DcUVzODmALQwkKLFDdWPRAwlMXCbTsfDNktDxEBbNtSK7CiNjfV5aK4lceKg-9-kBYFQXBCgoRAsDuMgidwxg9FBILOQZmLVDJIQHxpBJQwax2fQa0MWILB2K1fLsNtIhNFZOWrbD3SokChRFAB5cQRHYbh+GEMQpBcg83Ik7Q9CMUxzBpHYnF0AxQuUhArmMJ0NnbbzOwsXlEpo6yVzSjKWJnBpgK6uievShztyErF8uQnVmEJE4HUrZ8LV8ewHBwq1qpsNSTHuRxNP0ExtITEbUvSgCowG2N5w43TlzOkRxqcrE91c8S5rQ6qIp5fZuWwmJIh2CxNuWJkVmkKsAhrKlGWOj89Iev4KABIEQXGczLOGhHU16p7MSmaaxNm+avHCJk72JJ0q0iXblhB7b212mweR7DYjs627ijAdARklEUyEoAARcZ8gu1jBvYnSuZ5vnUwFihhfQfI8fzKbRMPdziqWELTA2NkWw2KlpEMTbLGMVkeQMB0bQpOHCGl3n+fIBWRaRlHTPRyEbql7nHbl53FeVgT8cLDWisWUmosrfZiUh58IjsTaOwIWOQqCdtNgCO2CGMqdLqAyXYVzlX4IJ9XCo+jzSdZAhCKBu8HlpOk6uWaSNmWW1duiXCEio5hUAgOBNE9N7ibQrxWRMStq1ret9EbK0vCdCstlZXQLnuExr1sbPiHl2guiKsPK61o1TAdcILSCAGLkXuwobOLY8MfGtAaMeIOZ0zosgRXpvkoUeR5T64UrEFBwZsqyxUXkEZkAVfB4QtDYB02dkoQTXHZABBV3rzXMBFK4YR448j2GyTa7Z-BmBrL4K41VwjZ26t+dBTEKCAM1vqPwJhGSbHng8YKPIwrVjONeAi7UQoxGfCg2AwocbpRYeHPQ15a7tR7NyHkVZHCJzqoDYwsQjAWkcFvYIhg6GnWkSIWRJ99TbFMBvKIyx6xBGBnVZ8xhnC3ACpnahdhs4O1llAeWgdzE4MsNHB42xcJVmwgEJOvgU6UhwsSdq88jDZ1zoE8eURWyHUBpvSwDYmwt0sKsWwQi8K7HsMSFJzAICvDSR5AwRSoi4XuNFf6m1aStgiEFTha1QgJQSEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QCMD2AXAYgG1QdwDoZ0BVWMAJwEUBXOdAS1QDsBiEgZQFEAlAfQCSAOQAKJACoBtAAwBdRKAAOqWA0YsFIAB6IAjAA4AzAQAsukwDZDAVhMAma3f26ANCACeiALR2DBXQCc0sHWAboWugDsutIWAL5xbmhYuIQAjnSw6swAwtgAhrCqAGYMlKwQLGAEDMwAbqgA1tXJOPgEGfRMuQVFDKWUCLUNAMb52TKyk5rKqtmaOgi61rqmJtb61tbS+hYm0tFunghmBNJ2VvoHAfrRJobmCUkYbemZ2XmFJWUUrJQUqAoBEUBXQxUBAFsCK1Uh13t1Pn0BhQhvVUGMJnJpkgQLM1N0Ft5ItYCE57BtDBZNtYLNYjt59PoCLtrJFdmELoZDHZIk8QDD2oVGrUoABBfIQAAW+XyFCENAhyHKnF4glEEmxShU+I0OMWUSZ4UsFgcPOCAXW9IQdhMkVJkQdhluFxWtmsfIFhDq+WwDAg4xF4qlMrlCqVv0qzGqwyaLResO9vv9jGYYol0tl8sVgxjGO6k01uO18z13kcFgIAQsARWkUpGyc+itjmkBGs3K5gQdkRr+g98faib9AdTQYzoezEaqNTRzWhA69PuHKbTwczYZzaLzLALunkOLxJdA+p2qx25cZ5gCDmbdlb7bsnYC3d7-ZSg6XycD6ZDWfDFWnGM509Aghy-Ucf3XSdUVGAMdyxOx9y1OYCVLBAaQCStpF0QxIhtW1OxMW97w7B5nwdV9En5BdQM-EdV3HP9ykjaNZzjd9FyTeix1-DcUVzODmALQwkKLFDdWPRAwlMXCbTsfDNktDxEBbNtSK7CiNjfV5aK4lceKg-9-kBYFQXBCgoRAsDuMgidwxg9FBILOQZmLVDJIQHxpBJQwax2fQa0MWILB2K1fLsNtIhNFZOWrbD3SokChRFAB5cQRHYbh+GEMQpBcg83Ik7Q9CMUxzBpHYnF0AxQuUhArmMJ0NnbbzOwsXlEpo6yVzSjKWJnBpgK6uievShztyErF8uQnVmEJE4HUrZ8LV8ewHBwq1qpsNSTHuRxNP0ExtITEbUvSgCowG2N5w43TlzOkRxqcrE91c8S5rQ6qIp5fZuWwmJIh2CxNuWJkVmkKsAhrKlGWOj89Iev4KABIEQXGczLOGhHU16p7MSmaaxNm+avHCJk72JJ0q0iXblhB7b212mweR7DYjs627ijAdARklEUyEoAARcZ8gu1jBvYnSuZ5vnUwFihhfQfI8fzKbRMPdziqWELTA2NkWw2KlpEMTbLGMVkeQMB0bQpOHCGl3n+fIBWRaRlHTPRyEbql7nHbl53FeVgT8cLDWisWUmosrfZiUh58IjsTaOwIWOQqCdtNgCO2CGMqdLqAyXYVzlX4IJ9XCo+jzSdZAhCKBu8HlpOk6uWaSNmWW1duiXCEio5hUAgOBNE9N7ibQrxWRMStq1ret9EbK0vCdCstlZXQLnuExr1sbPiHl2guiKsPK61o1TAdcILSCAGLkXuwobOLY8MfGtAaMeIOZ0zosgRXpvkoUeR5T64UrEFBwZsqyxUXkEZkAVfB4QtDYB02dkoQTXHZABBV3rzXMBFK4YR448j2GyTa7ZBmBrL4K41VwjZ26t+dBTEKCAM1vqPwJhGSbHng8YKPIwrVjONeAi7UQoxGfCg2AwocbpRYeHPQ15a7tR7NyHkVZHCJzqoDYwsQjAWkcFvYIhg6GnWkSIWRJ99TbFMBvKIyx6xBGBnVZ8xhnC3ACpnahdhs4O1llAeWgdzE4MsNHB42xcJVmwgEJOvgU6UhwsSdq88jDZ1zoE8eURWyHUBpvSwDYmwt0sKsWwQi8K7HsMSFJzAICvDSR5AwRSoi4XuNFf6m1aStgiEFTha1QgJQSEAA */
   id: "botFlow",
   predictableActionArguments: true,
   initial: "checkStateAndJump",
@@ -602,41 +602,37 @@ export const botFlowMachine2: any = {
         },
       },
     },
-    askingAadhaarNumber: {
+
+    // New states for Soil Health Card flow
+    askingSoilHealthPhone: {
       on: {
         USER_INPUT: {
-          target: "checkType2",
+          target: "validateSoilHealthPhone",
           actions: [
             assign({
-              query: (_, event) => event.data,
-              response: (_, event) => event.data,
+              userPhone: (_, event) => event.data,
+              type: "",
             }),
           ],
         },
       },
     },
-    checkType2: {
+
+    validateSoilHealthPhone: {
       invoke: {
-        src: "getInput",
+        src: "validatePhoneNumber",
         onDone: [
           {
-            cond: "ifAudio",
-            target: "confirmInput2",
-            actions: [
-              assign({
-                type: "pause",
-              }),
-            ],
+            cond: "ifValidPhone",
+            target: "fetchingSoilHealthCard",
           },
           {
-            target: "validatingAadhaarNumber",
+            target: "askingSoilHealthPhone",
             actions: [
               assign({
-                query: (_, event) => event.data.query,
-                userAadhaarNumber: (_, event) => {
-                  return `${event.data.query}`;
-                },
-                type: "",
+                response: () => "Please enter a valid 10-digit mobile number.",
+                userPhone: "",
+                type: "pause",
               }),
             ],
           },
@@ -652,14 +648,44 @@ export const botFlowMachine2: any = {
         },
       },
     },
-    confirmInput2: {
-      on: {
-        USER_INPUT: {
-          target: "checkType2",
+
+    fetchingSoilHealthCard: {
+      invoke: {
+        src: "fetchSoilHealthCard",
+        onDone: {
+          target: "endFlow",
           actions: [
             assign({
-              query: (_, event) => event.data,
               response: (_, event) => event.data,
+              userPhone: "",
+              isSoilHealthCard: false,
+              type: "",
+            }),
+          ],
+        },
+        onError: {
+          target: "error",
+          actions: [
+            assign({
+              error: (_, event) => event.data.message,
+              userPhone: "",
+              isSoilHealthCard: false,
+              type: "",
+            }),
+          ],
+        },
+      },
+    },
+
+    askingAadhaarNumber: {
+      on: {
+        USER_INPUT: {
+          target: "validatingAadhaarNumber",
+          actions: [
+            assign({
+              userAadhaarNumber: (context, event) =>
+                `${context.userAadhaarNumber}${event.data}`,
+              type: "",
             }),
           ],
         },
@@ -744,137 +770,14 @@ export const botFlowMachine2: any = {
         },
       },
     },
-    askLastAaadhaarDigits: {
-      on: {
-        USER_INPUT: {
-          target: "checkType4",
-          actions: [
-            assign({
-              query: (_, event) => event.data,
-              response: (_, event) => event.data,
-            }),
-          ],
-        },
-      },
-    },
-    checkType4: {
-      invoke: {
-        src: "getInput",
-        onDone: [
-          {
-            cond: "ifAudio",
-            target: "confirmInput4",
-            actions: [
-              assign({
-                type: "pause",
-              }),
-            ],
-          },
-          {
-            target: "validatingAadhaarNumber",
-            actions: [
-              assign({
-                query: (_, event) => event.data.query,
-                lastAadhaarDigits: (_context, event) => {
-                  return `${event.data.query}`;
-                },
-                type: "",
-              }),
-            ],
-          },
-        ],
-        onError: {
-          target: "error",
-          actions: [
-            assign({
-              error: (_, event) => event.data.message,
-              type: "",
-            }),
-          ],
-        },
-      },
-    },
-    confirmInput4: {
-      on: {
-        USER_INPUT: {
-          target: "checkType4",
-          actions: [
-            assign({
-              query: (_, event) => event.data,
-              response: (_, event) => event.data,
-            }),
-          ],
-        },
-      },
-    },
     askingOTP: {
       on: {
         USER_INPUT: {
-          target: "checkType3",
+          target: "validatingOTP",
           actions: [
             assign({
-              query: (_, event) => event.data,
-              response: (_, event) => event.data,
-            }),
-          ],
-        },
-      },
-    },
-    checkType3: {
-      invoke: {
-        src: "getInput",
-        onDone: [
-          {
-            cond: "ifAudio",
-            target: "confirmInput3",
-            actions: [
-              assign({
-                type: "pause",
-              }),
-            ],
-          },
-          {
-            cond: "resendOTP",
-            target: "validatingAadhaarNumber",
-            actions: [
-              assign({
-                response: engMessage["label.popUpTitle3"],
-              }),
-            ],
-          },
-          {
-            target: "validatingOTP",
-            actions: [
-              assign({
-                query: (_, event) => event.data.query,
-                otp: (_context, event) => {
-                  logger.log("setting user otp");
-                  return `${event.data.query}`;
-                },
-                type: "",
-              }),
-            ],
-          },
-        ],
-        onError: {
-          target: "error",
-          actions: [
-            assign({
-              error: (_, event) => event.data.message,
+              otp: (_, event) => event.data,
               type: "",
-            }),
-          ],
-        },
-      },
-    },
-    confirmInput3: {
-      on: {
-        USER_INPUT: {
-          target: "checkType3",
-          actions: [
-            assign({
-              query: (_, event) => event.data,
-              response: (_, event) => event.data,
             }),
           ],
         },
@@ -927,7 +830,6 @@ export const botFlowMachine2: any = {
           actions: [
             assign({
               response: (_, event) => event.data,
-              userAadhaarNumber: "",
               type: "",
             }),
           ],
@@ -937,7 +839,6 @@ export const botFlowMachine2: any = {
           actions: [
             assign({
               error: (_, event) => event.data.message,
-              userAadhaarNumber: "",
               type: "",
             }),
           ],
@@ -947,14 +848,7 @@ export const botFlowMachine2: any = {
     error: {
       invoke: {
         src: "logError",
-        onDone: {
-          target: "endFlow",
-          actions: [
-            assign({
-              userAadhaarNumber: "",
-            }),
-          ],
-        },
+        onDone: "endFlow",
       },
     },
     endFlow: {
@@ -986,7 +880,14 @@ export const botFlowMachine3: any = {
     isWadhwaniResponse: "false",
     userPhone: "",
     schemeName: "",
-    isSoilHealthCard: false
+    isSoilHealthCard: false,
+    isPmfbyClaim: false,
+    isPmfbyPolicy: false,
+    pmfbyMobile: "",
+    pmfbySeason: "",
+    pmfbyYear: "",
+    farmerId: "",
+    pmfbyToken: ""
   },
   states: {
     checkStateAndJump: {
@@ -1070,6 +971,30 @@ export const botFlowMachine3: any = {
         {
           target: "fetchingSoilHealthCard",
           cond: (context) => context.currentState === "fetchingSoilHealthCard",
+        },
+        {
+          target: "askingPmfbyMobile",
+          cond: (context) => context.currentState === "askingPmfbyMobile",
+        },
+        {
+          target: "validatePmfbyMobile",
+          cond: (context) => context.currentState === "validatePmfbyMobile",
+        },
+        {
+          target: "checkPmfbyFlow",
+          cond: (context) => context.currentState === "checkPmfbyFlow",
+        },
+        {
+          target: "askingPmfbySeason",
+          cond: (context) => context.currentState === "askingPmfbySeason",
+        },
+        {
+          target: "askingPmfbyYear",
+          cond: (context) => context.currentState === "askingPmfbyYear",
+        },
+        {
+          target: "fetchingPmfbyData",
+          cond: (context) => context.currentState === "fetchingPmfbyData",
         },
       ],
     },
@@ -1174,6 +1099,32 @@ export const botFlowMachine3: any = {
                 response: () => "Please enter your registered mobile number to fetch your Soil Health Card.",
                 queryType: (_, event) => event.data,
                 isSoilHealthCard: true,
+                type: "pause",
+              }),
+            ],
+          },
+          {
+            cond: "ifPmfbyClaim",
+            target: "askingPmfbyMobile",
+            actions: [
+              assign({
+                response: () => "Please enter your registered mobile number to check PMFBY claim status.",
+                queryType: (_, event) => event.data,
+                isPmfbyClaim: true,
+                isPmfbyPolicy: false,
+                type: "pause",
+              }),
+            ],
+          },
+          {
+            cond: "ifPmfbyPolicy",
+            target: "askingPmfbyMobile",
+            actions: [
+              assign({
+                response: () => "Please enter your registered mobile number to check PMFBY policy status.",
+                queryType: (_, event) => event.data,
+                isPmfbyClaim: false,
+                isPmfbyPolicy: true,
                 type: "pause",
               }),
             ],
@@ -1699,6 +1650,128 @@ export const botFlowMachine3: any = {
               error: (_, event) => event.data.message,
               userPhone: "",
               isSoilHealthCard: false,
+              type: "",
+            }),
+          ],
+        },
+      },
+    },
+    askingPmfbyMobile: {
+      on: {
+        USER_INPUT: {
+          target: "validatePmfbyMobile",
+          actions: [
+            assign({
+              pmfbyMobile: (_, event) => event.data,
+              type: "",
+            }),
+          ],
+        },
+      },
+    },
+    validatePmfbyMobile: {
+      invoke: {
+        src: "validatePmfbyMobile",
+        onDone: [
+          {
+            cond: "ifValidPhone",
+            target: "checkPmfbyFlow",
+          },
+          {
+            target: "askingPmfbyMobile",
+            actions: [
+              assign({
+                response: () => "Please enter a valid 10-digit mobile number.",
+                pmfbyMobile: "",
+                type: "pause",
+              }),
+            ],
+          },
+        ],
+        onError: {
+          target: "error",
+          actions: [
+            assign({
+              error: (_, event) => event.data.message,
+              type: "",
+            }),
+          ],
+        },
+      },
+    },
+    checkPmfbyFlow: {
+      always: [
+        {
+          target: "askingPmfbySeason",
+          cond: (context) => context.isPmfbyClaim || context.isPmfbyPolicy,
+        },
+      ],
+    },
+    askingPmfbySeason: {
+      entry: assign({
+        response: () => "Please enter the season (1 for Kharif, 2 for Rabi, 3 for Summer):",
+        type: "pause",
+      }),
+      on: {
+        USER_INPUT: {
+          target: "askingPmfbyYear",
+          actions: [
+            assign({
+              pmfbySeason: (_, event) => event.data,
+              type: "",
+            }),
+          ],
+        },
+      },
+    },
+    askingPmfbyYear: {
+      entry: assign({
+        response: () => "Please enter the year (e.g., 2023):",
+        type: "pause",
+      }),
+      on: {
+        USER_INPUT: {
+          target: "fetchingPmfbyData",
+          actions: [
+            assign({
+              pmfbyYear: (_, event) => event.data,
+              type: "",
+            }),
+          ],
+        },
+      },
+    },
+    fetchingPmfbyData: {
+      invoke: {
+        src: "fetchPmfbyData",
+        onDone: {
+          target: "endFlow",
+          actions: [
+            assign({
+              response: (_, event) => event.data,
+              pmfbyMobile: "",
+              pmfbySeason: "",
+              pmfbyYear: "",
+              farmerId: "",
+              pmfbyToken: "",
+              isPmfbyClaim: false,
+              isPmfbyPolicy: false,
+              type: "",
+            }),
+          ],
+        },
+        onError: {
+          target: "error",
+          actions: [
+            assign({
+              error: (_, event) => event.data.message,
+              pmfbyMobile: "",
+              pmfbySeason: "",
+              pmfbyYear: "",
+              farmerId: "",
+              pmfbyToken: "",
+              isPmfbyClaim: false,
+              isPmfbyPolicy: false,
               type: "",
             }),
           ],
