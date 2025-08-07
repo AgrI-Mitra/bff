@@ -202,6 +202,7 @@ export class AiToolsService {
     userId: string,
     sessionId: string
   ) {
+    /*
     try {
       let config: any = await this.getBhashiniConfig('tts',{
         "language": {
@@ -245,6 +246,7 @@ export class AiToolsService {
         error: error,
       };
     }
+    */
   }
 
   async textClassification(text: string) {
