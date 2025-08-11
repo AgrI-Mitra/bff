@@ -103,6 +103,7 @@ export class AiToolsService {
       
       let textArray = textWithoutUrls.split("\n")
       for(let i=0;i<textArray.length;i++){
+        if (!textArray[i] || textArray[i].trim() === "") continue; //skip empty lines
         let response: any = await this.computeBhashini(
           bhashiniConfig?.pipelineInferenceAPIEndPoint?.inferenceApiKey?.value,
           "translation",
